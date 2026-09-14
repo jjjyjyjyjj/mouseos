@@ -47,7 +47,7 @@ export class Mouse {
   get status(): string {
     const d = this.world.drives
     const f = (n: number) => n.toFixed(2)
-    return `${this.brain.current?.id ?? '-'} / ${this.world.critter.anim}
+    return `${this.brain.current?.id ?? '-'} / ${this.world.critter.anim}   app:${this.world.focusedApp ?? '?'}
 fear ${f(d.fear)}  annoy ${f(d.annoy)}
 sleep ${f(d.sleep)}  curious ${f(d.curiosity)}
 habituation ${f(d.habituation)}`

@@ -133,3 +133,11 @@ html, body {
   display: none; z-index: 999; pointer-events: none;
 }
 .hud.is-on { display: block; }
+
+/* --- overlay mode: she's standing on your real desktop -------------------- */
+html.native, body.native { background: transparent; }
+.os--native {
+  background: none;
+  pointer-events: none;
+}
+.os--native .hud { background: rgba(42, 35, 32, 0.9); }

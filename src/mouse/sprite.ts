@@ -63,6 +63,12 @@ const SVG = `
       <ellipse id="mo-eye" cx="72" cy="48" rx="2.8" ry="3" fill="#2a2320"/>
       <path id="mo-lid" d="M68 48 L 77 48" stroke="#2a2320" stroke-width="3" stroke-linecap="round" opacity="0"/>
       <path id="mo-brow" d="M67 40 L 78 44" stroke="#2a2320" stroke-width="3" stroke-linecap="round" opacity="0"/>
+      <g id="mo-glasses" opacity="0">
+        <circle cx="71" cy="48" r="7.5" fill="none" stroke="#2a2320" stroke-width="2.6"/>
+        <circle cx="84" cy="50" r="5" fill="none" stroke="#2a2320" stroke-width="2.6"/>
+        <path d="M78.5 48.6 L 79.6 49.4" stroke="#2a2320" stroke-width="2.6"/>
+        <path d="M64 46 L 58 44" stroke="#2a2320" stroke-width="2.6" stroke-linecap="round"/>
+      </g>
       <circle id="mo-nose" cx="82" cy="53" r="3.2" fill="#e8899a" stroke="#2a2320" stroke-width="2.2"/>
       <path d="M80 57 L 88 61 M80 55 L 89 54" stroke="#2a2320" stroke-width="1.6" stroke-linecap="round" opacity="0.7"/>
     </g>
@@ -81,6 +87,7 @@ class PlaceholderSprite implements Sprite {
   private eye: SVGEllipseElement
   private lid: SVGPathElement
   private brow: SVGPathElement
+  private glasses: SVGGElement
   private bubble: HTMLElement
 
   constructor() {
@@ -98,6 +105,7 @@ class PlaceholderSprite implements Sprite {
     this.eye = q<SVGEllipseElement>('#mo-eye')
     this.lid = q<SVGPathElement>('#mo-lid')
     this.brow = q<SVGPathElement>('#mo-brow')
+    this.glasses = q<SVGGElement>('#mo-glasses')
     this.bubble = this.el.querySelector('.mo__bubble') as HTMLElement
   }
 
@@ -153,6 +161,18 @@ class PlaceholderSprite implements Sprite {
         squash = 0.92
         eye = 0.7
         break
+      case 'dance':
+        bob = Math.abs(Math.sin(t * 8)) * 7
+        tilt = Math.sin(t * 4) * 15
+        step = Math.sin(t * 8) * 8
+        ear = Math.sin(t * 8) * 14
+        tailWag = Math.sin(t * 8) * 22
+        break
+      case 'read':
+        bob = Math.sin(t * 2) * 1.2
+        tilt = Math.sin(t * 1.3) * 2.5
+        ear = -6
+        break
       case 'yawn':
         squash = 0.95
         eye = 0.2
@@ -183,6 +203,7 @@ class PlaceholderSprite implements Sprite {
     this.lid.setAttribute('opacity', eye < 0.15 ? '1' : '0')
     this.eye.setAttribute('opacity', eye < 0.15 ? '0' : '1')
     this.brow.setAttribute('opacity', s.anim === 'angry' || s.anim === 'stomp' ? '1' : '0')
+    this.glasses.setAttribute('opacity', s.anim === 'read' ? '1' : '0')
 
     if (this.bubble.textContent !== (s.say ?? '')) this.bubble.textContent = s.say ?? ''
     this.bubble.classList.toggle('is-on', !!s.say)

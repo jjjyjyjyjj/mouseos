@@ -1,19 +1,57 @@
 # MouseOS
 
-A desktop environment inhabited by one small mouse.
+One small mouse, living on your desktop.
 
 ```bash
 npm install
-npm run dev
+npm run overlay     # she runs loose on your real macOS desktop
+npm run dev         # or: a fake desktop in the browser, for developing behaviors
 ```
 
 Then: move the cursor at her, leave her alone, click her four times fast, or walk
 away for 30 seconds. Press **D** for the drives HUD.
 
+Quit her from the Dock icon (Cmd+Q). **Ctrl+Alt+M** hides and shows her.
+
+## Overlay mode
+
+A transparent, click-through, always-on-top window stretched over your work area
+([electron/main.cjs](electron/main.cjs)). You keep using your computer straight
+through her; the overlay only stops ignoring the mouse when the pointer is
+actually on top of her, which is what makes clicking her possible.
+
+Everything she perceives is pulled from the OS, because a click-through window
+receives no input of its own:
+
+| sense | source |
+| --- | --- |
+| cursor | `screen.getCursorScreenPoint()`, polled at 60Hz |
+| idleness | `powerMonitor.getSystemIdleTime()` — *real* system idle, so the nap means you actually left |
+| frontmost app | `osascript`, polled — needs Accessibility permission; without it she just never gets costumes |
+
+Open Spotify and she dances. Open VS Code and she puts on glasses. That table is
+`APP_MOODS` in [behaviors.ts](src/mouse/behaviors.ts) — one line per app.
+
+`npm run overlay:dev` attaches the overlay to a running `npm run dev` server for
+live reload. `npx electron . --probe` prints her live state to the terminal,
+which is the only way to inspect a window you can't click into.
+
+### Not yet real on the desktop
+
+- **Hiding behind windows** works in browser mode but needs other apps' window
+  geometry to work for real (`CGWindowListCopyWindowInfo` via a native helper).
+  Right now she just bolts and cowers in the open.
+- **Carrying files** needs a `CGEventTap` to see drags that aren't aimed at our
+  window, plus Finder scripting to know what's being dragged. That's the one
+  feature that gets meaningfully harder outside the browser.
+
 ## The one rule
 
 **The desktop never talks to the mouse.** It emits semantic events (`src/bus.ts`)
-and the mouse decides what she cares about. Adding "open Figma → she picks up a
+and the mouse decides what she cares about. This is what made the jump from a
+web page to your real desktop cheap: [os/native.ts](src/os/native.ts) emits the
+same `cursor.move` / `app.open` events from macOS, and not one line of the brain
+changed. Adding "open Figma → she picks up a
 pen" is a new `Behavior` object, not a change to OS code.
 
 ```

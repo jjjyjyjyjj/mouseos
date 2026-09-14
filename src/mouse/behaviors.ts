@@ -146,4 +146,27 @@ const Nap: Behavior = {
   },
 }
 
-export const behaviors: Behavior[] = [Loaf, Wander, Flee, Curious, Annoyed, Nap]
+/**
+ * Costume table. Adding a reaction to a new app is one line here -- the OS
+ * (or, in overlay mode, macOS itself) just reports which app is frontmost.
+ */
+const APP_MOODS: Record<string, { anim: string; say: string | null }> = {
+  spotify: { anim: 'dance', say: '\u266A' },
+  vscode: { anim: 'read', say: null },
+  terminal: { anim: 'read', say: null },
+}
+
+const AppMood: Behavior = {
+  id: 'appmood',
+  priority: 40,
+  score: (w) => (w.focusedApp && APP_MOODS[w.focusedApp] ? 0.55 : 0),
+  *run(w): Routine {
+    const mood = w.focusedApp ? APP_MOODS[w.focusedApp] : undefined
+    if (!mood) return
+    yield anim(mood.anim)
+    if (mood.say) yield say(mood.say, 1400)
+    yield anim(mood.anim, 4200)
+  },
+}
+
+export const behaviors: Behavior[] = [Loaf, Wander, Flee, Curious, Annoyed, Nap, AppMood]
