@@ -42,6 +42,18 @@ export interface AtlasDef {
   anchors?: Record<string, Record<string, [number, number][]>>
 }
 
+/**
+ * Preferred input: one folder per animation, holding numbered PNG frames
+ * straight out of Procreate's "Share > Layers > PNG files".
+ *   src/art/walk/1.png, src/art/walk/2.png, ...
+ */
+const FRAME_FILES = import.meta.glob<string>('../art/*/*.{png,webp,avif}', {
+  eager: true,
+  query: '?url',
+  import: 'default',
+})
+const FRAME_CONFIG = import.meta.glob<{ default: FramesConfig }>('../art/frames.json', { eager: true })
+
 // Both globs are empty until you add art, which is a no-op rather than an error.
 const ATLASES = import.meta.glob<{ default: AtlasDef }>('../art/*.json', { eager: true })
 const SHEETS = import.meta.glob<string>('../art/*.{png,webp,gif,avif}', {
@@ -50,7 +62,45 @@ const SHEETS = import.meta.glob<string>('../art/*.{png,webp,gif,avif}', {
   import: 'default',
 })
 
+/** Optional, and entirely optional-shaped: every field has a working default. */
+export interface FramesConfig {
+  fps?: number
+  scale?: number
+  anims?: Record<string, { fps?: number; loop?: boolean }>
+}
+
+/** "10.png" must sort after "9.png", which a plain string sort gets wrong. */
+function naturalCompare(a: string, b: string): number {
+  return a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' })
+}
+
+function collectFrameFolders(): Record<string, string[]> {
+  const byAnim: Record<string, [string, string][]> = {}
+  for (const [path, url] of Object.entries(FRAME_FILES)) {
+    const parts = path.split('/')
+    const name = parts[parts.length - 2]
+    const file = parts[parts.length - 1]
+    ;(byAnim[name] ??= []).push([file, url])
+  }
+  const out: Record<string, string[]> = {}
+  for (const [name, files] of Object.entries(byAnim)) {
+    out[name] = files.sort((a, b) => naturalCompare(a[0], b[0])).map(([, url]) => url)
+  }
+  return out
+}
+
 export function createSprite(): Sprite {
+  const folders = collectFrameFolders()
+  if (Object.keys(folders).length) {
+    const cfgPath = Object.keys(FRAME_CONFIG)[0]
+    const cfg = cfgPath ? FRAME_CONFIG[cfgPath].default : {}
+    const summary = Object.entries(folders)
+      .map(([n, f]) => `${n}(${f.length})`)
+      .join(' ')
+    console.info(`[mouseos] drawing from src/art/ frame folders: ${summary}`)
+    return new FramesSprite(folders, cfg)
+  }
+
   const atlasPath = Object.keys(ATLASES)[0]
   if (!atlasPath) return new PlaceholderSprite()
 
@@ -230,6 +280,69 @@ class PlaceholderSprite implements Sprite {
     this.eye.setAttribute('opacity', eye < 0.15 ? '0' : '1')
     this.brow.setAttribute('opacity', s.anim === 'angry' || s.anim === 'stomp' ? '1' : '0')
     this.glasses.setAttribute('opacity', s.anim === 'read' ? '1' : '0')
+
+    if (this.bubble.textContent !== (s.say ?? '')) this.bubble.textContent = s.say ?? ''
+    this.bubble.classList.toggle('is-on', !!s.say)
+  }
+}
+
+/* ------------------------------------------------------------------ */
+
+/**
+ * One <img> whose src we swap between preloaded frames. Costs a few more files
+ * than a packed sheet and buys a workflow with no packing step at all -- export
+ * from Procreate straight into a folder and she's animated.
+ */
+class FramesSprite implements Sprite {
+  el: HTMLElement
+  private img: HTMLImageElement
+  private bubble: HTMLElement
+  private scale: number
+  private fps: number
+  private current = ''
+  private warned = new Set<string>()
+
+  constructor(
+    private folders: Record<string, string[]>,
+    private cfg: FramesConfig,
+  ) {
+    this.scale = cfg.scale ?? 1
+    this.fps = cfg.fps ?? 10
+
+    this.el = document.createElement('div')
+    this.el.className = 'mo mo--frames'
+    this.el.innerHTML = `<div class="mo__bubble"></div><img class="mo__frame" alt="" />`
+    this.img = this.el.querySelector('.mo__frame') as HTMLImageElement
+    this.bubble = this.el.querySelector('.mo__bubble') as HTMLElement
+
+    // Decode every frame up front, or the first play of each animation flickers.
+    for (const urls of Object.values(folders)) {
+      for (const url of urls) {
+        const pre = new Image()
+        pre.src = url
+      }
+    }
+  }
+
+  update(s: SpriteState): void {
+    const frames = this.folders[s.anim] ?? this.folders['idle']
+    if (!frames?.length) {
+      if (!this.warned.has(s.anim)) {
+        this.warned.add(s.anim)
+        console.warn(`[mouseos] no src/art/${s.anim}/ folder, and no idle/ to fall back on`)
+      }
+      return
+    }
+
+    const opts = this.cfg.anims?.[s.anim]
+    const raw = Math.floor(s.t * (opts?.fps ?? this.fps))
+    const i = opts?.loop === false ? Math.min(raw, frames.length - 1) : raw % frames.length
+
+    if (frames[i] !== this.current) {
+      this.current = frames[i]
+      this.img.src = frames[i]
+    }
+    this.img.style.transform = `scale(${this.scale * s.facing}, ${this.scale}) translate(-50%, -50%)`
 
     if (this.bubble.textContent !== (s.say ?? '')) this.bubble.textContent = s.say ?? ''
     this.bubble.classList.toggle('is-on', !!s.say)

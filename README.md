@@ -99,9 +99,13 @@ her but never hurts her gradually stops being frightening.
 
 ## Swapping in the real drawings
 
-Drop `mouse.png` + `mouse.json` into [src/art/](src/art/) and she switches over
-automatically — no code change. **[src/art/README.md](src/art/README.md) has the
-full format**, the animation list, and what to draw first.
+Drop a folder of numbered PNG frames per animation into [src/art/](src/art/) —
+`src/art/walk/1.png`, `2.png`, … — and she switches over automatically, no code
+change and no packing step. It's shaped around Procreate's
+`Share → Layers → PNG files`. A packed sprite sheet works too.
+
+**[src/art/README.md](src/art/README.md) has the full format**, the animation
+list, and what to draw first.
 
 The art is bundled at build time rather than fetched at runtime, because the
 overlay runs over `file://` where `fetch()` is blocked. Console says which

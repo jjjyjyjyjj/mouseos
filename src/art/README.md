@@ -1,74 +1,85 @@
 # Put her drawings here
 
-Two files, and she stops being a placeholder:
+Two ways in. **Use folders** — it's the one that matches how Procreate exports.
+
+## Folders of frames (recommended)
+
+One folder per animation, numbered frames inside:
 
 ```
-src/art/mouse.png     one sheet, transparent background
-src/art/mouse.json    what's in it
+src/art/
+  idle/   1.png 2.png 3.png 4.png
+  walk/   1.png 2.png … 10.png
+  run/    1.png …
+  cower/  1.png 2.png
 ```
 
-Nothing else changes. `sprite.ts` finds them at build time and switches over —
-you'll see `[mouseos] drawing from ../art/mouse.json` in the console.
+That's it. No packing step, no JSON to hand-write. The console confirms what it
+found: `[mouseos] drawing from src/art/ frame folders: idle(4) walk(10)`.
 
-## The sheet
+Frames sort naturally, so `10.png` comes after `9.png`, not after `1.png`.
+Procreate's own layer names (`Layer 1.png`, `Layer 2.png`…) work unchanged.
 
-A uniform grid. **One animation per row**, frames left to right, no padding, no
-trimming, every cell the same size. Rows may have different frame counts; the
-sheet is just as wide as the longest row.
+### From Procreate
 
-Keep her in the same spot in every cell — if she jumps around inside the frame,
-she'll jitter on screen. The grid is the rig.
+One canvas per animation, Animation Assist on, **one layer per frame**, then
+`Share → Layers → PNG files`. Unzip into the matching folder.
 
-## mouse.json
+If you use frame *groups*, flatten them first — that export writes individual
+layers, not composited frames.
+
+**Don't export GIF.** GIF transparency is 1-bit, so her antialiased lines get a
+hard halo against whatever's behind her on the desktop. And a GIF runs on its
+own clock with no way to seek from code, which breaks holding the last frame and
+any sync with what she's actually doing.
+
+### src/art/frames.json (optional)
+
+Every field has a working default; the file can be skipped entirely.
 
 ```json
 {
-  "image": "mouse.png",
-  "frameW": 192,
-  "frameH": 192,
-  "scale": 0.5,
   "fps": 10,
-
+  "scale": 0.5,
   "anims": {
-    "idle":  { "row": 0,  "count": 4 },
-    "walk":  { "row": 1,  "count": 6 },
-    "run":   { "row": 2,  "count": 6, "fps": 14 },
-    "sniff": { "row": 3,  "count": 4 },
-    "perk":  { "row": 4,  "count": 2 },
-    "cower": { "row": 5,  "count": 2 },
-    "peek":  { "row": 6,  "count": 2, "loop": false },
-    "angry": { "row": 7,  "count": 4, "fps": 16 },
-    "stomp": { "row": 8,  "count": 4 },
-    "yawn":  { "row": 9,  "count": 3, "loop": false },
-    "curl":  { "row": 10, "count": 2, "loop": false },
-    "dance": { "row": 11, "count": 6 },
-    "read":  { "row": 12, "count": 2 }
+    "run":  { "fps": 14 },
+    "curl": { "loop": false },
+    "yawn": { "loop": false },
+    "peek": { "loop": false }
   }
 }
 ```
 
-- `scale` — draw big, display small. At `frameW: 192, scale: 0.5` she renders
-  96px and stays crisp on a retina screen.
-- `fps` — per-animation override of the top-level default.
-- `loop: false` — hold the last frame instead of cycling. Right for `curl`,
-  `yawn` and `peek`, which are arrivals, not idles.
-- A missing animation silently falls back to `idle`, so you can ship four rows
-  and add the rest later.
+- `scale` — draw big, display small. Export at 192px and set `0.5` for a crisp
+  sprite on retina.
+- `loop: false` — hold the last frame. Right for `curl`, `yawn` and `peek`,
+  which are arrivals, not idles.
 
-## Drawing order
+## One packed sheet (later, if you want it)
 
-She is on screen in `idle`, `walk`, `run` and `cower` maybe 80% of the time.
-Draw those four first and she'll already feel finished.
+`mouse.png` + `mouse.json` in this folder, one animation per row, uniform cells.
+Fewer files; needs a packing step every time you redraw. Only worth it if the
+frame count gets large. Format is `AtlasDef` in
+[../mouse/sprite.ts](../mouse/sprite.ts).
 
-Then: `sniff` `perk` `curl` `yawn` `angry` `stomp` `peek` `dance` `read`.
+## What to draw
+
+A missing animation falls back to `idle`, so ship four folders and add the rest
+whenever.
+
+She's in `idle`, `walk`, `run` or `cower` maybe 80% of the time — draw those
+four first and she'll already feel finished. Then: `sniff` `perk` `curl` `yawn`
+`angry` `stomp` `peek` `dance` `read`.
 
 ## Two things worth doing
 
 **Animate on twos, around 10fps.** Choppy reads as hand-drawn rather than cheap,
 and it's a third of the work. `run` is the one worth a faster `fps`.
 
-**Costumes are layers, not new cycles.** Glasses and a garbage-worker hat over
-one walk cycle is two drawings. Redrawing every cycle in every outfit is
-combinatorial and will bury you. `anchors` in `AtlasDef` is where per-frame
-attach points go when you get to that — the same mechanism carries a file icon
-in her paws.
+**Keep her in the same spot in every frame.** If she drifts around inside the
+canvas she'll jitter on screen — the frame is the rig. Same canvas size for
+every animation.
+
+**Costumes are layers, not new cycles.** Glasses over one walk cycle is two
+drawings. Redrawing every cycle in every outfit is combinatorial and will bury
+you around outfit three.

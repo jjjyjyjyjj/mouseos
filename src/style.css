@@ -141,3 +141,14 @@ html.native, body.native { background: transparent; }
   pointer-events: none;
 }
 .os--native .hud { background: rgba(42, 35, 32, 0.9); }
+
+/* Frame-folder sprite: centred on her position, scaled from its own top-left. */
+.mo__frame {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform-origin: 0 0;
+  pointer-events: auto;
+  display: block;
+  max-width: none;
+}
