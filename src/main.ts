@@ -13,11 +13,11 @@ if (native) {
   document.documentElement.classList.add('native')
   document.body.classList.add('native')
   root.className = 'os os--native'
-  await mouse.mount(root)
+  mouse.mount(root)
   bootNative(native, mouse.world)
 } else {
   buildDesktop(root)
-  await mouse.mount(root)
+  mouse.mount(root)
   bootWeb()
 }
 

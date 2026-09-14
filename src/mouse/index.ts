@@ -13,8 +13,8 @@ export class Mouse {
   private animName = ''
   private animT = 0
 
-  async mount(parent: HTMLElement): Promise<void> {
-    this.sprite = await createSprite()
+  mount(parent: HTMLElement): void {
+    this.sprite = createSprite()
     parent.appendChild(this.sprite.el)
     zorder.register(MOUSE_LAYER, this.sprite.el)
 

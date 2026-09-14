@@ -99,29 +99,13 @@ her but never hurts her gradually stops being frightening.
 
 ## Swapping in the real drawings
 
-`sprite.ts` picks `AtlasSprite` automatically if `public/mouse.json` exists:
+Drop `mouse.png` + `mouse.json` into [src/art/](src/art/) and she switches over
+automatically — no code change. **[src/art/README.md](src/art/README.md) has the
+full format**, the animation list, and what to draw first.
 
-```json
-{
-  "image": "/mouse.png",
-  "frameW": 96, "frameH": 96, "fps": 10,
-  "anims": {
-    "idle":  { "row": 0, "count": 4 },
-    "walk":  { "row": 1, "count": 6 },
-    "run":   { "row": 2, "count": 6 },
-    "cower": { "row": 3, "count": 2 },
-    "curl":  { "row": 4, "count": 2, "loop": false }
-  },
-  "anchors": { "walk": { "handR": [[70,52],[71,50]] } }
-}
-```
-
-Draw on twos (~10fps). Choppy reads as hand-drawn *and* costs a third of the
-frames. Costumes (glasses, hard hat) should be separate layers pinned to
-`anchors`, not redrawn cycles — otherwise it's combinatorial.
-
-Animation names currently used: `idle walk run sniff perk cower peek angry
-stomp yawn curl`.
+The art is bundled at build time rather than fetched at runtime, because the
+overlay runs over `file://` where `fetch()` is blocked. Console says which
+renderer is live, and warns loudly if the sheet's grid doesn't match the JSON.
 
 ## Next: the carry
 

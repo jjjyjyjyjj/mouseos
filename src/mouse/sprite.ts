@@ -3,9 +3,12 @@
  *
  * Two implementations behind one interface:
  *   PlaceholderSprite -- procedural SVG, so the toy is alive before any art exists.
- *   AtlasSprite       -- drop `public/mouse.png` + `public/mouse.json` and it
- *                        takes over automatically. That's the swap-in point for
- *                        the real hand-drawn frames.
+ *   AtlasSprite       -- put `mouse.png` + `mouse.json` in src/art/ and it takes
+ *                        over automatically. That's the swap-in point for the
+ *                        real hand-drawn frames.
+ *
+ * The art is bundled at build time rather than fetched at runtime, because the
+ * overlay loads over file:// where fetch() is blocked outright.
  *
  * Real art should be sprite sheets on twos (~10fps). Choppy reads as hand-drawn
  * and costs you a third of the frames.
@@ -25,9 +28,13 @@ export interface Sprite {
 }
 
 export interface AtlasDef {
+  /** Filename of the sheet, which must sit next to the JSON in src/art/. */
   image: string
+  /** Size of one cell in the sheet, in pixels. */
   frameW: number
   frameH: number
+  /** Display scale. Draw at 2x and set 0.5 for a crisp sprite on retina. */
+  scale?: number
   fps: number
   /** Animation name -> row in the sheet + number of frames. */
   anims: Record<string, { row: number; count: number; fps?: number; loop?: boolean }>
@@ -35,14 +42,33 @@ export interface AtlasDef {
   anchors?: Record<string, Record<string, [number, number][]>>
 }
 
-export async function createSprite(): Promise<Sprite> {
-  try {
-    const res = await fetch('/mouse.json')
-    if (res.ok) return new AtlasSprite((await res.json()) as AtlasDef)
-  } catch {
-    /* no atlas yet -- that's the normal case */
+// Both globs are empty until you add art, which is a no-op rather than an error.
+const ATLASES = import.meta.glob<{ default: AtlasDef }>('../art/*.json', { eager: true })
+const SHEETS = import.meta.glob<string>('../art/*.{png,webp,gif,avif}', {
+  eager: true,
+  query: '?url',
+  import: 'default',
+})
+
+export function createSprite(): Sprite {
+  const atlasPath = Object.keys(ATLASES)[0]
+  if (!atlasPath) return new PlaceholderSprite()
+
+  const def = ATLASES[atlasPath].default
+  const wanted = def.image.split('/').pop() ?? def.image
+  const url = Object.entries(SHEETS).find(([p]) => p.endsWith(`/${wanted}`))?.[1]
+
+  if (!url) {
+    console.error(
+      `[mouseos] ${atlasPath} wants "${def.image}", but src/art/ has ` +
+        `${Object.keys(SHEETS).length ? Object.keys(SHEETS).join(', ') : 'no image files'}. ` +
+        'Falling back to the placeholder.',
+    )
+    return new PlaceholderSprite()
   }
-  return new PlaceholderSprite()
+
+  console.info(`[mouseos] drawing from ${atlasPath}`)
+  return new AtlasSprite(def, url)
 }
 
 /* ------------------------------------------------------------------ */
@@ -216,29 +242,69 @@ class AtlasSprite implements Sprite {
   el: HTMLElement
   private sheet: HTMLElement
   private bubble: HTMLElement
+  private scale: number
+  private warned = new Set<string>()
 
-  constructor(private def: AtlasDef) {
+  constructor(
+    private def: AtlasDef,
+    url: string,
+  ) {
+    this.scale = def.scale ?? 1
     this.el = document.createElement('div')
     this.el.className = 'mo mo--atlas'
     this.el.innerHTML = `<div class="mo__bubble"></div><div class="mo__sheet"></div>`
     this.sheet = this.el.querySelector('.mo__sheet') as HTMLElement
     this.bubble = this.el.querySelector('.mo__bubble') as HTMLElement
+
+    // Centre the cell on her position so any frame size lines up with the
+    // placeholder's footprint.
     Object.assign(this.sheet.style, {
+      position: 'absolute',
+      left: '50%',
+      top: '50%',
+      marginLeft: `${-def.frameW / 2}px`,
+      marginTop: `${-def.frameH / 2}px`,
       width: `${def.frameW}px`,
       height: `${def.frameH}px`,
-      backgroundImage: `url(${def.image})`,
-      imageRendering: 'auto',
+      backgroundImage: `url(${url})`,
     })
+
+    this.verify(url)
+  }
+
+  /** The silent killer is a sheet whose grid doesn't match the JSON. Say so. */
+  private verify(url: string): void {
+    const rows = Math.max(...Object.values(this.def.anims).map((a) => a.row)) + 1
+    const cols = Math.max(...Object.values(this.def.anims).map((a) => a.count))
+    const img = new Image()
+    img.onload = () => {
+      const needW = cols * this.def.frameW
+      const needH = rows * this.def.frameH
+      if (img.naturalWidth < needW || img.naturalHeight < needH) {
+        console.error(
+          `[mouseos] ${this.def.image} is ${img.naturalWidth}x${img.naturalHeight}, but the ` +
+            `atlas describes ${cols} columns x ${rows} rows of ${this.def.frameW}x${this.def.frameH} ` +
+            `(needs at least ${needW}x${needH}). Frames will be cut off.`,
+        )
+      }
+    }
+    img.src = url
   }
 
   update(s: SpriteState): void {
     const a = this.def.anims[s.anim] ?? this.def.anims['idle']
-    if (!a) return
+    if (!a) {
+      if (!this.warned.has(s.anim)) {
+        this.warned.add(s.anim)
+        console.warn(`[mouseos] no frames for "${s.anim}" and no "idle" to fall back on`)
+      }
+      return
+    }
     const fps = a.fps ?? this.def.fps
     const raw = Math.floor(s.t * fps)
     const frame = a.loop === false ? Math.min(raw, a.count - 1) : raw % a.count
     this.sheet.style.backgroundPosition = `${-frame * this.def.frameW}px ${-a.row * this.def.frameH}px`
-    this.sheet.style.transform = `scaleX(${s.facing})`
+    this.sheet.style.transform = `scale(${this.scale * s.facing}, ${this.scale})`
     if (this.bubble.textContent !== (s.say ?? '')) this.bubble.textContent = s.say ?? ''
     this.bubble.classList.toggle('is-on', !!s.say)
   }
