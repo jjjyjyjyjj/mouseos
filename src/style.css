@@ -1,0 +1,135 @@
+:root {
+  --ink: #2a2320;
+  --paper: #f7f3ea;
+  --line: #d8cfbe;
+  --accent: #e8899a;
+  color-scheme: light;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  height: 100%;
+  overflow: hidden;
+  font: 13px/1.45 ui-rounded, "SF Pro Rounded", "Avenir Next", system-ui, sans-serif;
+  color: var(--ink);
+  cursor: default;
+  user-select: none;
+}
+
+.os {
+  position: fixed;
+  inset: 0;
+  background:
+    radial-gradient(120% 90% at 70% 10%, #fdf9f1 0%, #efe6d6 60%, #e3d7c2 100%);
+}
+
+/* --- chrome ------------------------------------------------------------ */
+.menubar {
+  position: absolute; top: 0; left: 0; right: 0; height: 28px;
+  display: flex; align-items: center; gap: 18px;
+  padding: 0 14px;
+  background: rgba(255, 253, 248, 0.82);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--line);
+  font-size: 12px;
+  z-index: 900;
+}
+.menu-title { font-weight: 700; }
+.apple { color: var(--accent); font-size: 14px; }
+.menu { opacity: 0.6; }
+.clock { margin-left: auto; opacity: 0.6; font-variant-numeric: tabular-nums; }
+
+.desktop { position: absolute; inset: 28px 0 76px 0; }
+
+.dock {
+  position: absolute; bottom: 12px; left: 50%; transform: translateX(-50%);
+  display: flex; gap: 10px; padding: 8px 12px;
+  background: rgba(255, 253, 248, 0.78);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  box-shadow: 0 8px 24px rgba(60, 45, 30, 0.14);
+  z-index: 900;
+}
+.dock__app {
+  width: 44px; height: 44px; font-size: 24px; line-height: 1;
+  border: none; border-radius: 12px; background: transparent; cursor: pointer;
+  transition: transform 0.16s ease, background 0.16s ease;
+}
+.dock__app:hover { background: rgba(0, 0, 0, 0.05); transform: translateY(-3px); }
+.dock__app.is-bounced { animation: bounce 0.6s ease; }
+@keyframes bounce {
+  0%, 100% { transform: translateY(0); }
+  35% { transform: translateY(-14px); }
+  60% { transform: translateY(-4px); }
+}
+
+/* --- icons ------------------------------------------------------------- */
+.icon {
+  position: absolute; top: 0; left: 0;
+  width: 88px; padding: 6px 4px;
+  text-align: center; border-radius: 10px;
+  touch-action: none;
+}
+.icon:hover { background: rgba(255, 255, 255, 0.45); }
+.icon__glyph { font-size: 38px; line-height: 1.1; filter: drop-shadow(0 2px 3px rgba(60, 45, 30, 0.18)); }
+.icon__label { font-size: 11px; margin-top: 2px; }
+.icon.is-dragging { opacity: 0.85; transform-origin: center; z-index: 950; }
+.icon--target .icon__glyph { transition: transform 0.2s ease; }
+.icon--target.is-bumped .icon__glyph { transform: scale(1.25) rotate(-6deg); }
+.icon.is-consumed { opacity: 0; transition: opacity 0.25s ease; }
+
+/* --- windows ----------------------------------------------------------- */
+.window {
+  position: absolute; top: 0; left: 0;
+  background: var(--paper);
+  border: 1.5px solid var(--ink);
+  border-radius: 12px;
+  box-shadow: 0 14px 34px rgba(60, 45, 30, 0.22);
+  overflow: hidden;
+  display: flex; flex-direction: column;
+}
+.window__bar {
+  height: 30px; flex: 0 0 30px;
+  display: flex; align-items: center; gap: 6px; padding: 0 10px;
+  background: #efe7d8; border-bottom: 1.5px solid var(--ink);
+  cursor: grab; touch-action: none;
+}
+.window__bar:active { cursor: grabbing; }
+.dot { width: 11px; height: 11px; border-radius: 50%; border: 1.2px solid var(--ink); }
+.dot--r { background: #f08a7f; } .dot--y { background: #f3cf7a; } .dot--g { background: #a8d08a; }
+.window__title { margin-left: 8px; font-size: 12px; font-weight: 600; }
+.window__body { margin: 0; padding: 12px 14px; overflow: auto; font: 12px/1.6 ui-monospace, Menlo, monospace; }
+
+/* --- the critter -------------------------------------------------------- */
+.mo {
+  position: fixed; top: 0; left: 0;
+  width: 96px; height: 96px;
+  pointer-events: none;
+  will-change: transform;
+}
+.mo__svg { pointer-events: auto; overflow: visible; display: block; }
+.mo__sheet { pointer-events: auto; background-repeat: no-repeat; }
+.mo.is-hidden-behind { filter: brightness(0.94); }
+
+.mo__bubble {
+  position: absolute; top: -14px; left: 62px;
+  padding: 2px 8px; border-radius: 10px;
+  background: #fff; border: 1.5px solid var(--ink);
+  font-weight: 700; font-size: 13px; white-space: nowrap;
+  opacity: 0; transform: scale(0.6) translateY(6px);
+  transition: opacity 0.12s ease, transform 0.16s cubic-bezier(0.3, 1.6, 0.5, 1);
+}
+.mo__bubble.is-on { opacity: 1; transform: scale(1) translateY(0); }
+
+/* --- debug -------------------------------------------------------------- */
+.hud {
+  position: fixed; right: 12px; top: 40px;
+  margin: 0; padding: 10px 12px;
+  background: rgba(42, 35, 32, 0.88); color: #f7f3ea;
+  border-radius: 10px; font: 11px/1.5 ui-monospace, Menlo, monospace;
+  display: none; z-index: 999; pointer-events: none;
+}
+.hud.is-on { display: block; }
