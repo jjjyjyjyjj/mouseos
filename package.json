@@ -4,10 +4,11 @@
   "version": "0.0.1",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "overlay": "vite build && electron .",
+    "dev": "npm run art:prep && vite",
+    "overlay": "npm run art:prep && vite build && electron .",
     "overlay:dev": "electron . --dev",
-    "build": "tsc --noEmit && vite build",
+    "art:prep": "node tools/prep-art.mjs",
+    "build": "npm run art:prep && tsc --noEmit && vite build",
     "preview": "vite preview"
   },
   "devDependencies": {

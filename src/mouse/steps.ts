@@ -95,9 +95,11 @@ export function integrate(w: World, dt: number): void {
   c.pos.x += c.vel.x * dt
   c.pos.y += c.vel.y * dt
 
-  const m = 26
+  // Margins allow for the drawn sprite being wider than her logical footprint,
+  // so she doesn't get clipped against the screen edges.
+  const m = 62
   const top = 40
-  const bottom = w.bounds.h - 96
+  const bottom = w.bounds.h - 110
   if (c.pos.x < m || c.pos.x > w.bounds.w - m) c.vel.x *= -0.4
   if (c.pos.y < top || c.pos.y > bottom) c.vel.y *= -0.4
   c.pos.x = clamp(c.pos.x, m, w.bounds.w - m)

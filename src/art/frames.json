@@ -1,0 +1,20 @@
+{
+  "facing": "left",
+  "scale": 0.4,
+  "fps": 8,
+
+  "alias": {
+    "idle": "walk#1",
+    "curl": "idle",
+    "yawn": "idle#1",
+    "peek": "cower#1",
+    "perk": "walk#1"
+  },
+
+  "anims": {
+    "idle": { "fps": 3 },
+    "run": { "fps": 12 },
+    "cower": { "fps": 5, "loop": false },
+    "curl": { "fps": 2 }
+  }
+}

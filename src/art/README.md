@@ -1,21 +1,35 @@
-# Put her drawings here
-
-Two ways in. **Use folders** — it's the one that matches how Procreate exports.
-
-## Folders of frames (recommended)
-
-One folder per animation, numbered frames inside:
+# Her drawings
 
 ```
-src/art/
+art-source/          <- exports go here, full size, straight from Procreate
   idle/   1.png 2.png 3.png 4.png
-  walk/   1.png 2.png … 10.png
-  run/    1.png …
-  cower/  1.png 2.png
+  walk/   1.png 2.png
+  run/    1.png 2.png
+  cower/  1.png 2.png 3.png
+
+src/art/             <- generated: the same frames, resized to 384px
+  frames.json        <- hand-written, optional
 ```
 
-That's it. No packing step, no JSON to hand-write. The console confirms what it
-found: `[mouseos] drawing from src/art/ frame folders: idle(4) walk(10)`.
+One folder per animation, numbered frames inside. Drop new exports into
+`art-source/` and run:
+
+```bash
+npm run art:prep
+```
+
+`dev`, `build` and `overlay` all run it first, so usually you just export and
+launch. It only touches frames whose source is newer, and never modifies the
+originals.
+
+**Why the resize step:** Procreate exports at canvas resolution. A 2048px frame
+is ~16MB of texture memory once decoded, so a dozen of them in an always-on
+overlay would sit on hundreds of megabytes. At 384px the whole set is ~300KB and
+still has retina headroom. Raise it with `ART_MAX=512 npm run art:prep` if she
+ever looks soft.
+
+The console confirms what loaded:
+`[mouseos] drawing from src/art/ frame folders: cower(3) idle(4) run(2) walk(2)`.
 
 Frames sort naturally, so `10.png` comes after `9.png`, not after `1.png`.
 Procreate's own layer names (`Layer 1.png`, `Layer 2.png`…) work unchanged.
@@ -23,7 +37,8 @@ Procreate's own layer names (`Layer 1.png`, `Layer 2.png`…) work unchanged.
 ### From Procreate
 
 One canvas per animation, Animation Assist on, **one layer per frame**, then
-`Share → Layers → PNG files`. Unzip into the matching folder.
+`Share → Layers → PNG files`. Unzip into the matching folder under
+`art-source/`.
 
 If you use frame *groups*, flatten them first — that export writes individual
 layers, not composited frames.
@@ -33,27 +48,38 @@ hard halo against whatever's behind her on the desktop. And a GIF runs on its
 own clock with no way to seek from code, which breaks holding the last frame and
 any sync with what she's actually doing.
 
-### src/art/frames.json (optional)
+### src/art/frames.json
 
-Every field has a working default; the file can be skipped entirely.
+Every field has a working default; the file can be deleted entirely.
 
 ```json
 {
-  "fps": 10,
-  "scale": 0.5,
+  "facing": "left",
+  "scale": 0.4,
+  "fps": 8,
+  "alias": { "idle": "walk#1", "curl": "idle", "peek": "cower#1" },
   "anims": {
-    "run":  { "fps": 14 },
-    "curl": { "loop": false },
-    "yawn": { "loop": false },
-    "peek": { "loop": false }
+    "run":   { "fps": 12 },
+    "cower": { "fps": 5, "loop": false },
+    "curl":  { "fps": 2, "offset": [0, -12] }
   }
 }
 ```
 
-- `scale` — draw big, display small. Export at 192px and set `0.5` for a crisp
-  sprite on retina.
-- `loop: false` — hold the last frame. Right for `curl`, `yawn` and `peek`,
-  which are arrivals, not idles.
+- `facing` — which way the drawings point, so the mirror goes the right way.
+  Hers face left; the default is `"right"`.
+- `scale` — how big she is on screen. `0.4` of a 384px frame puts her at about
+  120px tall.
+- `alias` — reuse one folder for another animation. `"walk#1"` pins a single
+  frame, which is how a standing pose becomes the idle.
+- `loop: false` — hold the last frame. Right for `cower`, `curl` and `peek`,
+  which are arrivals rather than idles.
+- `offset: [x, y]` — nudge one animation in source pixels, to line its feet up
+  with the others without redrawing.
+
+**An animation with no art is never invisible.** It follows its alias, then
+falls back to `idle`, then to whatever folder exists. Draw four and the other
+nine borrow.
 
 ## One packed sheet (later, if you want it)
 

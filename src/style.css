@@ -152,3 +152,8 @@ html.native, body.native { background: transparent; }
   display: block;
   max-width: none;
 }
+
+/* The <img> keeps its full source size in layout however it's scaled, so the
+   hit target lives on the container instead of on the oversized image. */
+.mo--frames { pointer-events: auto; }
+.mo--frames .mo__frame { pointer-events: none; }

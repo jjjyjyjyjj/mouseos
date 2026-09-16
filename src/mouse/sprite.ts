@@ -66,7 +66,14 @@ const SHEETS = import.meta.glob<string>('../art/*.{png,webp,gif,avif}', {
 export interface FramesConfig {
   fps?: number
   scale?: number
-  anims?: Record<string, { fps?: number; loop?: boolean }>
+  /** Which way the drawings face, so the flip goes the right way. */
+  facing?: 'left' | 'right'
+  /**
+   * Reuse one folder for another animation. `"walk#1"` pins a single frame,
+   * which is how a standing pose gets reused as an idle.
+   */
+  alias?: Record<string, string>
+  anims?: Record<string, { fps?: number; loop?: boolean; offset?: [number, number] }>
 }
 
 /** "10.png" must sort after "9.png", which a plain string sort gets wrong. */
@@ -302,12 +309,17 @@ class FramesSprite implements Sprite {
   private current = ''
   private warned = new Set<string>()
 
+  private flip: 1 | -1
+  private anySource: string
+
   constructor(
     private folders: Record<string, string[]>,
     private cfg: FramesConfig,
   ) {
     this.scale = cfg.scale ?? 1
     this.fps = cfg.fps ?? 10
+    this.flip = cfg.facing === 'left' ? -1 : 1
+    this.anySource = Object.keys(folders).sort()[0]
 
     this.el = document.createElement('div')
     this.el.className = 'mo mo--frames'
@@ -324,25 +336,54 @@ class FramesSprite implements Sprite {
     }
   }
 
+  /**
+   * Follows aliases, then falls back to idle, then to *any* folder. She is
+   * never invisible just because an animation has no drawings yet.
+   */
+  private resolve(anim: string, depth = 0): { frames: string[]; pinned: number | null; key: string } {
+    const alias = this.cfg.alias?.[anim]
+    if (alias && depth < 4) {
+      const [name, frame] = alias.split('#')
+      const target = this.folders[name]
+      if (target?.length) {
+        const pinned = frame ? Math.min(Number(frame), target.length) - 1 : null
+        return { frames: target, pinned: Number.isFinite(pinned) ? pinned : null, key: name }
+      }
+      return this.resolve(name, depth + 1)
+    }
+    if (this.folders[anim]?.length) return { frames: this.folders[anim], pinned: null, key: anim }
+    if (anim !== 'idle') return this.resolve('idle', depth + 1)
+    return { frames: this.folders[this.anySource] ?? [], pinned: 0, key: this.anySource }
+  }
+
   update(s: SpriteState): void {
-    const frames = this.folders[s.anim] ?? this.folders['idle']
-    if (!frames?.length) {
+    const { frames, pinned, key } = this.resolve(s.anim)
+    if (!frames.length) {
       if (!this.warned.has(s.anim)) {
         this.warned.add(s.anim)
-        console.warn(`[mouseos] no src/art/${s.anim}/ folder, and no idle/ to fall back on`)
+        console.warn(`[mouseos] nothing to draw for "${s.anim}" -- src/art/ is empty`)
       }
       return
     }
 
-    const opts = this.cfg.anims?.[s.anim]
-    const raw = Math.floor(s.t * (opts?.fps ?? this.fps))
-    const i = opts?.loop === false ? Math.min(raw, frames.length - 1) : raw % frames.length
+    // Timing options come from the animation being played, not the folder it
+    // borrowed frames from.
+    const opts = this.cfg.anims?.[s.anim] ?? this.cfg.anims?.[key]
+    let i = pinned ?? 0
+    if (pinned === null) {
+      const raw = Math.floor(s.t * (opts?.fps ?? this.fps))
+      i = opts?.loop === false ? Math.min(raw, frames.length - 1) : raw % frames.length
+    }
 
     if (frames[i] !== this.current) {
       this.current = frames[i]
       this.img.src = frames[i]
     }
-    this.img.style.transform = `scale(${this.scale * s.facing}, ${this.scale}) translate(-50%, -50%)`
+
+    const [ox, oy] = opts?.offset ?? [0, 0]
+    this.img.style.transform =
+      `scale(${this.scale * s.facing * this.flip}, ${this.scale}) ` +
+      `translate(calc(-50% + ${ox}px), calc(-50% + ${oy}px))`
 
     if (this.bubble.textContent !== (s.say ?? '')) this.bubble.textContent = s.say ?? ''
     this.bubble.classList.toggle('is-on', !!s.say)
