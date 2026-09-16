@@ -1,7 +1,7 @@
 import { allWindowIds } from '../os/desktop'
 import { MOUSE_LAYER, zorder } from '../os/zorder'
 import { clamp, dist, rand, v, type Vec } from './motion'
-import { anim, fleeFrom, say, walkTo, type Routine } from './steps'
+import { anim, coast, fleeFrom, held, say, walkTo, type Routine } from './steps'
 import type { Behavior } from './brain'
 import type { World } from './world'
 
@@ -49,13 +49,13 @@ const Flee: Behavior = {
       yield walkTo(hideout.point, { speed: 460, anim: 'run', tol: 24 })
       zorder.putBelow(MOUSE_LAYER, hideout.windowId)
       w.critter.hidingBehind = hideout.windowId
-      yield anim('cower', rand(1400, 2600))
+      yield anim('perk', rand(1400, 2600))
       // She habituates: a cursor that chases but never hurts gets less scary.
       w.drives.habituation = clamp(w.drives.habituation + 0.18, 0, 1)
-      yield anim('peek', 700)
+      yield anim('idle', 700)
     } else {
       yield fleeFrom((ww) => ww.cursor, 500)
-      yield anim('cower', 900)
+      yield anim('perk', 900)
       w.drives.habituation = clamp(w.drives.habituation + 0.1, 0, 1)
     }
     w.drives.fear *= 0.3
@@ -147,6 +147,43 @@ const Nap: Behavior = {
 }
 
 /**
+ * Picked up by the pointer. Outranks everything -- whatever she was doing, she
+ * is now dangling from your cursor.
+ */
+const Dragged: Behavior = {
+  id: 'dragged',
+  priority: 200,
+  score: (w) => (w.held ? 10 : 0),
+  *run(): Routine {
+    yield anim('flail')
+    yield say('!', 600)
+    yield held()
+  },
+}
+
+/**
+ * Let go of. She carries the throw's momentum, lands, and crumples -- which is
+ * what `cower` is for: recovering from being dropped, not hiding from a cursor.
+ */
+const Dropped: Behavior = {
+  id: 'dropped',
+  priority: 150,
+  // One shot: the flag is consumed as the routine starts, and the priority
+  // guard keeps it running to the end rather than re-triggering itself.
+  score: (w) => (w.pendingDrop && !w.held ? 9 : 0),
+  *run(w): Routine {
+    w.pendingDrop = false
+    yield anim('flail')
+    yield coast(340)
+    yield anim('cower', 1500)
+    yield say('...', 800)
+    w.drives.fear = 0
+    w.drives.habituation = clamp(w.drives.habituation + 0.12, 0, 1)
+    yield anim('perk', 500)
+  },
+}
+
+/**
  * Costume table. Adding a reaction to a new app is one line here -- the OS
  * (or, in overlay mode, macOS itself) just reports which app is frontmost.
  */
@@ -169,4 +206,4 @@ const AppMood: Behavior = {
   },
 }
 
-export const behaviors: Behavior[] = [Loaf, Wander, Flee, Curious, Annoyed, Nap, AppMood]
+export const behaviors: Behavior[] = [Dragged, Dropped, Loaf, Wander, Flee, Curious, Annoyed, Nap, AppMood]

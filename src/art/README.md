@@ -94,8 +94,12 @@ A missing animation falls back to `idle`, so ship four folders and add the rest
 whenever.
 
 She's in `idle`, `walk`, `run` or `cower` maybe 80% of the time — draw those
-four first and she'll already feel finished. Then: `sniff` `perk` `curl` `yawn`
-`angry` `stomp` `peek` `dance` `read`.
+four first and she'll already feel finished. Then: `flail` `sniff` `perk` `curl`
+`yawn` `angry` `stomp` `peek` `dance` `read`.
+
+`cower` is what she does after being **dropped**, not when she's chased — she
+stays on her feet when the cursor comes at her. `flail` is her dangling from the
+pointer while held; it currently borrows `run`.
 
 ## Two things worth doing
 

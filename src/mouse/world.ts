@@ -37,6 +37,12 @@ export class World {
   idleMs = 0
 
   dragging: { id: string; x: number; y: number } | null = null
+
+  /** True while the pointer is physically holding her. */
+  held = false
+  grabOffset: Vec = v(0, 0)
+  /** Set on release, cleared by the recovery behaviour. One shot. */
+  pendingDrop = false
   focusedApp: string | null = null
   appOpenedAt = 0
 
@@ -68,6 +74,20 @@ export class World {
       }
     })
     bus.on('user.active', () => (this.idleMs = 0))
+    bus.on('self.grabbed', (p) => {
+      this.held = true
+      this.grabOffset = v(p.offsetX, p.offsetY)
+      this.drives.fear = 0
+      this.idleMs = 0
+    })
+    bus.on('self.dropped', (p) => {
+      this.held = false
+      this.pendingDrop = true
+      // She keeps the momentum of the throw.
+      this.critter.vel = v(clamp(p.vx, -1600, 1600), clamp(p.vy, -1600, 1600))
+      this.drives.fear = 0
+      this.idleMs = 0
+    })
     bus.on('self.clicked', () => {
       this.drives.annoy = clamp(this.drives.annoy + 0.34, 0, 1.4)
       this.idleMs = 0
@@ -101,8 +121,13 @@ export class World {
     this.cursorStillMs += dt * 1000
     this.idleMs += dt * 1000
 
+    if (this.held) {
+      this.drives.fear = 0
+      this.drives.curiosity = 0
+    }
+
     const d = this.cursorDist
-    const near = clamp(1 - d / 260, 0, 1)
+    const near = this.held ? 0 : clamp(1 - d / 260, 0, 1)
     const charging = clamp(this.closingSpeed / 900, 0, 1)
 
     // Fear spikes fast, fades slow, and dulls with repeated harmless approaches.

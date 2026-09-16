@@ -157,3 +157,7 @@ html.native, body.native { background: transparent; }
    hit target lives on the container instead of on the oversized image. */
 .mo--frames { pointer-events: auto; }
 .mo--frames .mo__frame { pointer-events: none; }
+
+/* She's grabbable. */
+.mo--frames, .mo__svg, .mo__sheet { cursor: grab; }
+.mo.is-grabbing, .mo.is-grabbing .mo__svg, .mo.is-grabbing .mo__sheet { cursor: grabbing; }

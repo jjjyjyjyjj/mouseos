@@ -13,6 +13,10 @@ export type Step =
   | { kind: 'wait'; ms: number; t?: number }
   | { kind: 'say'; text: string | null; ms?: number; t?: number }
   | { kind: 'face'; dir: 1 | -1 }
+  /** Pinned to the pointer. Ends the moment she's let go. */
+  | { kind: 'held'; t?: number }
+  /** Hands her back to physics -- used to let a throw carry. */
+  | { kind: 'coast'; ms: number; friction?: number; t?: number }
 
 export type Routine = Generator<Step, void, void>
 
@@ -23,6 +27,8 @@ export const fleeFrom = (from: (w: World) => Vec, ms: number, speed?: number): S
 export const anim = (name: string, ms?: number): Step => ({ kind: 'anim', name, ms })
 export const wait = (ms: number): Step => ({ kind: 'wait', ms })
 export const say = (text: string | null, ms?: number): Step => ({ kind: 'say', text, ms })
+export const held = (): Step => ({ kind: 'held' })
+export const coast = (ms: number, friction = 2.2): Step => ({ kind: 'coast', ms, friction })
 
 const WALK_SPEED = 190
 const RUN_SPEED = 420
@@ -86,6 +92,25 @@ export function updateStep(step: Step, w: World, dt: number): boolean {
     }
     case 'face':
       return true
+
+    case 'held': {
+      // Bail out before touching velocity, or the throw is wiped on release.
+      if (!w.held) return true
+      c.pos.x = w.cursor.x + w.grabOffset.x
+      c.pos.y = w.cursor.y + w.grabOffset.y
+      c.vel.x = 0
+      c.vel.y = 0
+      // She faces the way she's being swung.
+      if (Math.abs(w.cursorVel.x) > 60) c.facing = w.cursorVel.x > 0 ? 1 : -1
+      return false
+    }
+
+    case 'coast': {
+      const k = Math.max(0, 1 - (step.friction ?? 2.2) * dt)
+      c.vel.x *= k
+      c.vel.y *= k
+      return (step.t ?? 0) >= step.ms
+    }
   }
 }
 

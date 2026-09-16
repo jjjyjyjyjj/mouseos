@@ -17,6 +17,10 @@ export type OSEvents = {
   'window.move': { id: string }
   'app.open': { app: string }
   'self.clicked': { x: number; y: number }
+  /** The pointer has picked her up. Offsets keep her from snapping to centre. */
+  'self.grabbed': { offsetX: number; offsetY: number }
+  /** Let go. Whatever the pointer was doing becomes her launch velocity. */
+  'self.dropped': { vx: number; vy: number }
 }
 
 type Handler<K extends keyof OSEvents> = (payload: OSEvents[K]) => void

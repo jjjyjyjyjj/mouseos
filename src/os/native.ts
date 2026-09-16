@@ -61,7 +61,9 @@ let clickable = false
 export function syncClickable(bridge: NativeBridge, world: World): void {
   // Sticky edge: the hole is slightly larger once open, so it doesn't chatter.
   const r = clickable ? HOLE_RADIUS + 14 : HOLE_RADIUS
-  const want = dist(world.cursor, world.critter.pos) < r
+  // While she's being dragged the overlay must keep receiving the pointer, or
+  // the drag dies the instant the cursor outruns her.
+  const want = world.held || dist(world.cursor, world.critter.pos) < r
   if (want === clickable) return
   clickable = want
   bridge.setClickable(want)

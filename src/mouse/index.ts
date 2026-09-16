@@ -18,9 +18,80 @@ export class Mouse {
     parent.appendChild(this.sprite.el)
     zorder.register(MOUSE_LAYER, this.sprite.el)
 
-    this.sprite.el.addEventListener('pointerdown', (e) => {
+    this.bindPointer(this.sprite.el)
+  }
+
+  /**
+   * One gesture, two meanings. A press that barely moves is a poke; a press
+   * that travels picks her up. Releasing a drag throws her with whatever
+   * velocity the pointer had.
+   */
+  private bindPointer(el: HTMLElement): void {
+    const SLOP = 6
+    const MAX_THROW = 1600
+
+    el.addEventListener('pointerdown', (e: PointerEvent) => {
+      if (e.button !== 0) return
+      e.preventDefault()
       e.stopPropagation()
-      bus.emit('self.clicked', { x: e.clientX, y: e.clientY })
+      // Capture keeps the drag alive when the pointer outruns her; failing to
+      // get it is not a reason to abandon the gesture.
+      try {
+        el.setPointerCapture(e.pointerId)
+      } catch {
+        /* no active pointer (synthetic events) */
+      }
+      el.classList.add('is-grabbing')
+
+      const start = { x: e.clientX, y: e.clientY }
+      let dragging = false
+      let last = { x: e.clientX, y: e.clientY, t: performance.now() }
+      let vx = 0
+      let vy = 0
+
+      const onMove = (ev: PointerEvent) => {
+        const now = performance.now()
+        const dt = Math.max(8, now - last.t) / 1000
+        vx = (ev.clientX - last.x) / dt
+        vy = (ev.clientY - last.y) / dt
+        last = { x: ev.clientX, y: ev.clientY, t: now }
+
+        if (!dragging && Math.hypot(ev.clientX - start.x, ev.clientY - start.y) > SLOP) {
+          dragging = true
+          const c = this.world.critter
+          bus.emit('self.grabbed', {
+            offsetX: c.pos.x - ev.clientX,
+            offsetY: c.pos.y - ev.clientY,
+          })
+        }
+      }
+
+      const onUp = (ev: PointerEvent) => {
+        try {
+          el.releasePointerCapture(ev.pointerId)
+        } catch {
+          /* never captured */
+        }
+        el.classList.remove('is-grabbing')
+        el.removeEventListener('pointermove', onMove)
+        el.removeEventListener('pointerup', onUp)
+        el.removeEventListener('pointercancel', onUp)
+
+        if (!dragging) {
+          bus.emit('self.clicked', { x: ev.clientX, y: ev.clientY })
+          return
+        }
+        // A pointer that stopped before release shouldn't fling her.
+        const stale = performance.now() - last.t > 120
+        bus.emit('self.dropped', {
+          vx: stale ? 0 : Math.max(-MAX_THROW, Math.min(MAX_THROW, vx)),
+          vy: stale ? 0 : Math.max(-MAX_THROW, Math.min(MAX_THROW, vy)),
+        })
+      }
+
+      el.addEventListener('pointermove', onMove)
+      el.addEventListener('pointerup', onUp)
+      el.addEventListener('pointercancel', onUp)
     })
   }
 
