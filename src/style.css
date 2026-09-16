@@ -161,3 +161,11 @@ html.native, body.native { background: transparent; }
 /* She's grabbable. */
 .mo--frames, .mo__svg, .mo__sheet { cursor: grab; }
 .mo.is-grabbing, .mo.is-grabbing .mo__svg, .mo.is-grabbing .mo__sheet { cursor: grabbing; }
+
+.menu--tag { font-size: 11px; opacity: 0.45; border: 1px solid var(--line); border-radius: 6px; padding: 0 6px; }
+.fatal {
+  position: fixed; left: 50%; top: 50%; transform: translate(-50%, -50%);
+  margin: 0; padding: 18px 22px; border-radius: 12px;
+  background: rgba(42, 35, 32, 0.92); color: #f7f3ea;
+  font: 12px/1.6 ui-monospace, Menlo, monospace; text-align: center;
+}

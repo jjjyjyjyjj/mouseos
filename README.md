@@ -5,8 +5,13 @@ One small mouse, living on your desktop.
 ```bash
 npm install
 npm run overlay     # she runs loose on your real macOS desktop
-npm run dev         # or: a fake desktop in the browser, for developing behaviors
+npm run dev         # development only: a fake desktop in the browser
 ```
+
+`npm run dev` opens a *simulated* desktop in a browser tab. It exists to build
+and test behaviours with devtools open, and never appears on a real screen — if
+the app ever starts without its system bridge it reports the failure rather than
+painting a fake computer over your actual one.
 
 Then: move the cursor at her, leave her alone, click her four times fast, or walk
 away for 30 seconds. Press **D** for the drives HUD.
@@ -16,7 +21,17 @@ go mid-swing and she keeps the throw's momentum, sails, lands and crumples
 before picking herself up. A press that *doesn't* travel is still just a poke,
 so clicking her repeatedly still makes her furious.
 
-Quit her from the Dock icon (Cmd+Q). **Ctrl+Alt+M** hides and shows her.
+## Turning her off
+
+She lives in the **menu bar**, not the Dock. Click the mouse-head icon:
+
+- **Mouse on screen** — the switch. Off hides the window, stops every OS poll
+  *and* stops the animation loop, so a disabled mouse costs nothing at all. The
+  setting is remembered between launches.
+- **Open at login** — start her with the machine.
+- **Quit MouseOS**.
+
+**Ctrl+Alt+M** toggles her from anywhere.
 
 ## Overlay mode
 

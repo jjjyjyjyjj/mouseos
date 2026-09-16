@@ -37,6 +37,7 @@ export function buildDesktop(mount: HTMLElement): void {
     <div class="menubar">
       <span class="apple">&#9679;</span>
       <span class="menu-title">MouseOS</span>
+      <span class="menu menu--tag">dev sandbox</span>
       <span class="menu">File</span><span class="menu">Edit</span><span class="menu">View</span>
       <span class="clock"></span>
     </div>

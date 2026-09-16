@@ -8,6 +8,19 @@ const root = document.getElementById('os') as HTMLElement
 const native = nativeBridge()
 const mouse = new Mouse()
 
+// The virtual desktop is a development sandbox for building behaviours, and
+// must never appear on someone's actual screen. If the app is running as the
+// overlay but the bridge is missing, that's a failure to report -- not a cue
+// to paint a fake computer over the real one.
+const inApp = navigator.userAgent.includes('Electron')
+if (inApp && !native) {
+  root.className = 'os os--native'
+  root.innerHTML =
+    '<pre class="fatal">MouseOS could not reach the system bridge.\n' +
+    'electron/preload.cjs failed to load, so she has no senses.</pre>'
+  throw new Error('[mouseos] native bridge missing')
+}
+
 if (native) {
   // Overlay mode: no fake desktop, because she's standing on your real one.
   document.documentElement.classList.add('native')
@@ -53,7 +66,10 @@ window.addEventListener('keydown', (e) => {
 
 /* --- the loop ----------------------------------------------------------- */
 let prev = performance.now()
+let running = false
+
 function frame(now: number) {
+  if (!running) return
   const dt = Math.min(0.05, (now - prev) / 1000)
   prev = now
   mouse.update(dt)
@@ -61,4 +77,16 @@ function frame(now: number) {
   if (hud.classList.contains('is-on')) hud.textContent = mouse.status
   requestAnimationFrame(frame)
 }
-requestAnimationFrame(frame)
+
+function setRunning(on: boolean): void {
+  if (on === running) return
+  running = on
+  if (!on) return
+  prev = performance.now() // don't hand her one enormous frame on resume
+  requestAnimationFrame(frame)
+}
+
+// Switched off means switched off: no loop at all, not a hidden window still
+// simulating a mouse nobody can see.
+native?.onEnabled?.((on) => setRunning(on))
+setRunning(true)

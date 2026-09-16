@@ -12,6 +12,7 @@ export interface NativeBridge {
   onCursor(cb: (p: { x: number; y: number }) => void): void
   onIdle(cb: (seconds: number) => void): void
   onApp(cb: (name: string) => void): void
+  onEnabled?(cb: (on: boolean) => void): void
   setClickable(yes: boolean): void
 }
 
