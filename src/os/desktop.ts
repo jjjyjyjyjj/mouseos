@@ -58,7 +58,7 @@ export function buildDesktop(mount: HTMLElement): void {
   addIcon(desktop, { id: 'trash', label: 'Trash', glyph: '\u{1F5D1}', x: 60, y: 390, accepts: true })
 
   makeWindow(desktop, 'win-readme', 'notes', 'README.txt', 420, 120, 380, 240,
-    `MouseOS v0.0.1\n\nShe lives here now.\n\n· move the cursor at her and she bolts\n· leave her alone and she gets curious\n· click her repeatedly at your own risk\n· do nothing for 30s and she naps\n\nDrag the window around -- she can hide\nbehind it.`)
+    `MouseOS -- dev sandbox\n\nA fake desktop for building behaviours.\nThe real thing runs over your own screen:\n\n  npm run overlay\n\n· move the cursor at her and she bolts\n· drag her, and let go mid-swing\n· click her repeatedly at your own risk\n· do nothing for 30s and she naps\n\nDrag this window -- she can hide behind it.`)
 
   buildDock(root.querySelector('#dock') as HTMLElement)
 }

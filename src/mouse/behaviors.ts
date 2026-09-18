@@ -114,13 +114,12 @@ const Annoyed: Behavior = {
   priority: 95,
   score: (w) => (w.drives.annoy > 0.62 ? 1.4 + w.drives.annoy : 0),
   *run(w): Routine {
-    yield anim('angry')
-    yield say('>:(', 900)
-    yield anim('angry', 400)
+    // The angry drawings carry their own "!" and anger mark, so no speech
+    // bubble -- it would just say the same thing twice.
+    yield anim('angry', 1000)
     // Charges the cursor instead of running from it.
-    yield walkTo((ww) => ww.cursor, { speed: 380, tol: 34, anim: 'stomp' })
-    yield anim('stomp', 800)
-    yield say('!!!', 600)
+    yield walkTo((ww) => ww.cursor, { speed: 380, tol: 34, anim: 'run' })
+    yield anim('angry', 1200)
     w.drives.annoy = 0
     w.drives.fear = 0
     yield anim('idle', 500)

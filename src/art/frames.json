@@ -8,7 +8,8 @@
     "yawn": "idle#1",
     "peek": "walk#1",
     "perk": "walk#1",
-    "flail": "run"
+    "flail": "run",
+    "stomp": "angry"
   },
   "anims": {
     "idle": {
@@ -26,6 +27,15 @@
     },
     "flail": {
       "fps": 14
+    },
+    "angry": {
+      "fps": 4
+    },
+    "walk": {
+      "offset": [
+        0,
+        36
+      ]
     }
   }
 }

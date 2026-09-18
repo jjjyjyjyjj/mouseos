@@ -380,7 +380,7 @@ class FramesSprite implements Sprite {
       this.img.src = frames[i]
     }
 
-    const [ox, oy] = opts?.offset ?? [0, 0]
+    const [ox, oy] = opts?.offset ?? this.cfg.anims?.[key]?.offset ?? [0, 0]
     this.img.style.transform =
       `scale(${this.scale * s.facing * this.flip}, ${this.scale}) ` +
       `translate(calc(-50% + ${ox}px), calc(-50% + ${oy}px))`
