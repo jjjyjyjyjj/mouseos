@@ -9,7 +9,8 @@
     "peek": "walk#1",
     "perk": "walk#1",
     "flail": "run",
-    "stomp": "angry"
+    "stomp": "angry",
+    "startle": "angry#1"
   },
   "anims": {
     "idle": {

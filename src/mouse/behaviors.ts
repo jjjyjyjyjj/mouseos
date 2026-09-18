@@ -40,8 +40,8 @@ const Flee: Behavior = {
   priority: 80,
   score: (w) => (w.drives.fear > 0.32 ? 0.6 + w.drives.fear : 0),
   *run(w): Routine {
-    yield anim('perk')
-    yield say('!', 600)
+    // The startle frame carries its own "!", so no speech bubble on top of it.
+    yield anim('startle', 600)
     yield fleeFrom((ww) => ww.cursor, 420)
 
     const hideout = findHideout(w)
@@ -55,7 +55,7 @@ const Flee: Behavior = {
       yield anim('idle', 700)
     } else {
       yield fleeFrom((ww) => ww.cursor, 500)
-      yield anim('perk', 900)
+      yield anim('startle', 900)
       w.drives.habituation = clamp(w.drives.habituation + 0.1, 0, 1)
     }
     w.drives.fear *= 0.3
@@ -178,7 +178,7 @@ const Dropped: Behavior = {
     yield say('...', 800)
     w.drives.fear = 0
     w.drives.habituation = clamp(w.drives.habituation + 0.12, 0, 1)
-    yield anim('perk', 500)
+    yield anim('startle', 500)
   },
 }
 
