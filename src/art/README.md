@@ -99,7 +99,7 @@ four first and she'll already feel finished. Then: `flail` `sniff` `perk`
 
 `cower` is what she does after being **dropped**, not when she's chased — she
 stays on her feet when the cursor comes at her. `flail` is her dangling from the
-pointer while held; it currently borrows `run`.
+pointer while held; it borrows `cower#2`, the small hunched frame.
 
 `startle` is the split second she notices something — it borrows `angry#1`, the
 red `!`. `perk` is the calmer "ears up" beat when she gets curious, so it stays

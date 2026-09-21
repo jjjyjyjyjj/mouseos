@@ -8,7 +8,7 @@
     "yawn": "idle#1",
     "peek": "walk#1",
     "perk": "walk#1",
-    "flail": "run",
+    "flail": "cower#2",
     "stomp": "angry",
     "startle": "angry#1"
   },
@@ -25,9 +25,6 @@
     },
     "curl": {
       "fps": 2
-    },
-    "flail": {
-      "fps": 14
     },
     "angry": {
       "fps": 4
