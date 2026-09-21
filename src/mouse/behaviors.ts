@@ -1,7 +1,7 @@
 import { allWindowIds } from '../os/desktop'
 import { MOUSE_LAYER, zorder } from '../os/zorder'
 import { clamp, dist, rand, v, type Vec } from './motion'
-import { anim, coast, fleeFrom, held, say, walkTo, type Routine } from './steps'
+import { anim, coast, fleeFrom, held, say, snap, walkTo, type Routine } from './steps'
 import type { Behavior } from './brain'
 import type { World } from './world'
 
@@ -46,10 +46,11 @@ const Flee: Behavior = {
 
     const hideout = findHideout(w)
     if (hideout) {
-      yield walkTo(hideout.point, { speed: 460, anim: 'run', tol: 24 })
+      yield walkTo(hideout.point, { speed: 460, anim: 'run', tol: 22 })
+      yield snap(hideout.point)
       zorder.putBelow(MOUSE_LAYER, hideout.windowId)
       w.critter.hidingBehind = hideout.windowId
-      yield anim('perk', rand(1400, 2600))
+      yield anim(hideout.anim, rand(1800, 3400))
       // She habituates: a cursor that chases but never hurts gets less scary.
       w.drives.habituation = clamp(w.drives.habituation + 0.18, 0, 1)
       yield anim('idle', 700)
@@ -68,18 +69,75 @@ const Flee: Behavior = {
   },
 }
 
-function findHideout(w: World): { windowId: string; point: Vec } | null {
-  let best: { windowId: string; point: Vec } | null = null
+/**
+ * The two hiding frames have their occlusion drawn in: hide/1 is cut off at the
+ * canvas's left edge, hide/2 at its bottom edge. So placing her is a matter of
+ * lining a canvas edge up with a window edge -- which is also why this works on
+ * a real desktop, where we can't put her behind anyone else's window.
+ */
+/** hide/1: she's flush to the canvas's left edge, feet 86% of the way down. */
+const HIDE_SIDE_FOOT = 329 / 384
+
+interface Hideout {
+  windowId: string
+  point: Vec
+  anim: string
+}
+
+function hideoutsFor(w: World, id: string, r: DOMRect): Hideout[] {
+  const half = w.spriteHalf
+  const size = half * 2
+  // Her drawn canvas isn't centred on her logical position, so every edge
+  // alignment below is solved for the canvas, then converted back.
+  const dy = w.spriteCenterDy
+  const out: Hideout[] = []
+
+  // Standing just past the window's right edge, her left half behind it.
+  out.push({
+    windowId: id,
+    anim: 'hideSide',
+    point: v(r.right + half, r.bottom - (HIDE_SIDE_FOOT - 0.5) * size - dy),
+  })
+
+  // Peeking over the top edge, everything below it hidden.
+  if (r.top > half * 0.8) {
+    out.push({
+      windowId: id,
+      anim: 'hideTop',
+      point: v(
+        clamp(r.left + r.width * rand(0.3, 0.7), r.left + half * 0.6, r.right - half * 0.6),
+        r.top - half - dy,
+      ),
+    })
+  }
+  return out
+}
+
+function findHideout(w: World): Hideout | null {
+  let best: Hideout | null = null
   let bestScore = -Infinity
+
   for (const id of allWindowIds()) {
     const r = zorder.rectOf(id)
     if (!r || r.width < 80) continue
-    const point = v(r.left + r.width / 2, r.top + r.height * 0.7)
-    // Prefer hideouts that are close to her but far from the cursor.
-    const s = dist(point, w.cursor) * 1.4 - dist(point, w.critter.pos)
-    if (s > bestScore) {
-      bestScore = s
-      best = { windowId: id, point }
+
+    for (const spot of hideoutsFor(w, id, r)) {
+      // Has to be somewhere she can actually stand.
+      const m = w.spriteHalf * 0.5
+      if (
+        spot.point.x < m ||
+        spot.point.x > w.bounds.w - m ||
+        spot.point.y < m ||
+        spot.point.y > w.bounds.h - m
+      ) {
+        continue
+      }
+      // Prefer hideouts close to her but far from the cursor.
+      const s = dist(spot.point, w.cursor) * 1.4 - dist(spot.point, w.critter.pos)
+      if (s > bestScore) {
+        bestScore = s
+        best = spot
+      }
     }
   }
   return best

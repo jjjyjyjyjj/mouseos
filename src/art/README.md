@@ -101,6 +101,13 @@ four first and she'll already feel finished. Then: `flail` `sniff` `perk`
 stays on her feet when the cursor comes at her. `flail` is her dangling from the
 pointer while held; it borrows `cower#2`, the small hunched frame.
 
+`hide` is special: its frames have the occlusion **drawn in**. `hide/1` is cut
+off at the canvas's *left* edge, so that edge lines up with a window's right
+edge; `hide/2` is cut off at the canvas's *bottom* edge, so it lines up with a
+window's top. They're marked `"fixed": true` in frames.json, which stops them
+being mirrored — a frame cut off on one side only works one way round. Keep new
+hiding frames flush to whichever canvas edge meets the window.
+
 `startle` is the split second she notices something — it borrows `angry#1`, the
 red `!`. `perk` is the calmer "ears up" beat when she gets curious, so it stays
 on a neutral standing frame; an alarm mark reads wrong there.

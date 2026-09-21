@@ -6,6 +6,10 @@ import { createSprite, type Sprite } from './sprite'
 import { integrate } from './steps'
 import { World } from './world'
 
+/** Her container box, and how far its centre sits above her logical position. */
+const BOX = 96
+const CENTER_DY = -12
+
 export class Mouse {
   readonly world = new World()
   private brain = new Brain(behaviors)
@@ -97,6 +101,8 @@ export class Mouse {
 
   /** Brain ticks at its own cadence inside Brain; motion runs every frame. */
   update(dt: number): void {
+    if (this.sprite.displayHalf) this.world.spriteHalf = this.sprite.displayHalf()
+    this.world.spriteCenterDy = CENTER_DY
     this.world.update(dt)
     this.brain.update(this.world, dt)
     integrate(this.world, dt)
@@ -109,7 +115,8 @@ export class Mouse {
       this.animT += dt
     }
 
-    this.sprite.el.style.transform = `translate3d(${(c.pos.x - 48).toFixed(1)}px, ${(c.pos.y - 60).toFixed(1)}px, 0)`
+    this.sprite.el.style.transform =
+      `translate3d(${(c.pos.x - BOX / 2).toFixed(1)}px, ${(c.pos.y + CENTER_DY - BOX / 2).toFixed(1)}px, 0)`
     this.sprite.el.classList.toggle('is-hidden-behind', !!c.hidingBehind)
     this.sprite.update({ anim: c.anim, facing: c.facing, t: this.animT, say: c.say })
   }

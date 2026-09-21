@@ -15,6 +15,9 @@ export type Step =
   | { kind: 'face'; dir: 1 | -1 }
   /** Pinned to the pointer. Ends the moment she's let go. */
   | { kind: 'held'; t?: number }
+  /** Exact placement. Walking only gets within its tolerance, and art whose
+   *  occlusion is drawn in has to line up with the window edge precisely. */
+  | { kind: 'snap'; to: Vec; t?: number }
   /** Hands her back to physics -- used to let a throw carry. */
   | { kind: 'coast'; ms: number; friction?: number; t?: number }
 
@@ -28,6 +31,7 @@ export const anim = (name: string, ms?: number): Step => ({ kind: 'anim', name, 
 export const wait = (ms: number): Step => ({ kind: 'wait', ms })
 export const say = (text: string | null, ms?: number): Step => ({ kind: 'say', text, ms })
 export const held = (): Step => ({ kind: 'held' })
+export const snap = (to: Vec): Step => ({ kind: 'snap', to })
 export const coast = (ms: number, friction = 2.2): Step => ({ kind: 'coast', ms, friction })
 
 const WALK_SPEED = 190
@@ -91,6 +95,13 @@ export function updateStep(step: Step, w: World, dt: number): boolean {
       return true
     }
     case 'face':
+      return true
+
+    case 'snap':
+      c.pos.x = step.to.x
+      c.pos.y = step.to.y
+      c.vel.x = 0
+      c.vel.y = 0
       return true
 
     case 'held': {

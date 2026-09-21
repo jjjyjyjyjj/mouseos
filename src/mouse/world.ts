@@ -63,6 +63,11 @@ export class World {
    */
   bounds = measureBounds()
 
+  /** Half her drawn canvas in screen px, so behaviours can place her edges. */
+  spriteHalf = 48
+  /** The drawn canvas is centred this far below her logical position. */
+  spriteCenterDy = -12
+
   constructor() {
     bus.on('cursor.move', (p) => {
       this.cursorVel = v(p.vx, p.vy)

@@ -25,6 +25,8 @@ export interface SpriteState {
 export interface Sprite {
   el: HTMLElement
   update(s: SpriteState): void
+  /** Half the drawn canvas, in screen px. Behaviours need it to place her. */
+  displayHalf?(): number
 }
 
 export interface AtlasDef {
@@ -73,7 +75,19 @@ export interface FramesConfig {
    * which is how a standing pose gets reused as an idle.
    */
   alias?: Record<string, string>
-  anims?: Record<string, { fps?: number; loop?: boolean; offset?: [number, number] }>
+  anims?: Record<
+    string,
+    {
+      fps?: number
+      loop?: boolean
+      offset?: [number, number]
+      /**
+       * Never mirror this one. For art whose occlusion is drawn in -- a frame
+       * cut off at the canvas edge only lines up with a window one way round.
+       */
+      fixed?: boolean
+    }
+  >
 }
 
 /** "10.png" must sort after "9.png", which a plain string sort gets wrong. */
@@ -331,9 +345,16 @@ class FramesSprite implements Sprite {
     for (const urls of Object.values(folders)) {
       for (const url of urls) {
         const pre = new Image()
+        pre.onload = () => (this.natural ||= pre.naturalWidth)
         pre.src = url
       }
     }
+  }
+
+  private natural = 0
+
+  displayHalf(): number {
+    return ((this.natural || 384) * this.scale) / 2
   }
 
   /**
@@ -381,9 +402,11 @@ class FramesSprite implements Sprite {
     }
 
     const [ox, oy] = opts?.offset ?? this.cfg.anims?.[key]?.offset ?? [0, 0]
+    // Pre-occluded frames are drawn against one particular edge, so mirroring
+    // them would put the cut on the wrong side.
+    const sx = opts?.fixed ? this.scale : this.scale * s.facing * this.flip
     this.img.style.transform =
-      `scale(${this.scale * s.facing * this.flip}, ${this.scale}) ` +
-      `translate(calc(-50% + ${ox}px), calc(-50% + ${oy}px))`
+      `scale(${sx}, ${this.scale}) translate(calc(-50% + ${ox}px), calc(-50% + ${oy}px))`
 
     if (this.bubble.textContent !== (s.say ?? '')) this.bubble.textContent = s.say ?? ''
     this.bubble.classList.toggle('is-on', !!s.say)
