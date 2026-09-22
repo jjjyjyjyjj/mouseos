@@ -1,4 +1,4 @@
-import { allWindowIds } from '../os/desktop'
+import { usingNativeWindows, windowRects, type WinRect } from '../os/windows'
 import { MOUSE_LAYER, zorder } from '../os/zorder'
 import { clamp, dist, rand, v, type Vec } from './motion'
 import { anim, coast, fleeFrom, held, say, snap, walkTo, type Routine } from './steps'
@@ -48,8 +48,12 @@ const Flee: Behavior = {
     if (hideout) {
       yield walkTo(hideout.point, { speed: 460, anim: 'run', tol: 22 })
       yield snap(hideout.point)
-      zorder.putBelow(MOUSE_LAYER, hideout.windowId)
-      w.critter.hidingBehind = hideout.windowId
+      // Only meaningful in the sandbox. Over the real desktop the overlay is
+      // always on top, and the drawn-in occlusion does the work instead.
+      if (!usingNativeWindows()) {
+        zorder.putBelow(MOUSE_LAYER, hideout.windowId)
+        w.critter.hidingBehind = hideout.windowId
+      }
       yield anim(hideout.anim, rand(1800, 3400))
       // She habituates: a cursor that chases but never hurts gets less scary.
       w.drives.habituation = clamp(w.drives.habituation + 0.18, 0, 1)
@@ -84,7 +88,7 @@ interface Hideout {
   anim: string
 }
 
-function hideoutsFor(w: World, id: string, r: DOMRect): Hideout[] {
+function hideoutsFor(w: World, id: string, r: WinRect): Hideout[] {
   const half = w.spriteHalf
   const size = half * 2
   // Her drawn canvas isn't centred on her logical position, so every edge
@@ -117,11 +121,10 @@ function findHideout(w: World): Hideout | null {
   let best: Hideout | null = null
   let bestScore = -Infinity
 
-  for (const id of allWindowIds()) {
-    const r = zorder.rectOf(id)
-    if (!r || r.width < 80) continue
+  for (const r of windowRects()) {
+    if (r.width < 80) continue
 
-    for (const spot of hideoutsFor(w, id, r)) {
+    for (const spot of hideoutsFor(w, r.id, r)) {
       // Has to be somewhere she can actually stand.
       const m = w.spriteHalf * 0.5
       if (

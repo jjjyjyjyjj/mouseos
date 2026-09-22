@@ -28,7 +28,7 @@ const {
   globalShortcut,
 } = require('electron')
 const { execFile } = require('node:child_process')
-const { readFileSync, writeFileSync } = require('node:fs')
+const { existsSync, readFileSync, writeFileSync } = require('node:fs')
 const path = require('node:path')
 
 const DEV = process.argv.includes('--dev')
@@ -38,6 +38,9 @@ const PROBE = process.argv.includes('--probe')
 
 const CURSOR_HZ = 60
 const APP_POLL_MS = 1200
+const WINDOW_POLL_MS = 900
+// She can only convincingly hide against a window that's actually in front.
+const HIDEABLE_WINDOWS = 5
 const TOGGLE_ACCELERATOR = 'Control+Alt+M'
 
 let win = null
@@ -137,6 +140,41 @@ function startPerception() {
 
   // Real system idle, in seconds.
   timers.push(setInterval(() => send('idle', powerMonitor.getSystemIdleTime()), 1000))
+
+  // Where everyone else's windows are, so she has something to hide against.
+  // The overlay is always-on-top and can never truly sit behind another app's
+  // window -- but it doesn't need to, because the hiding frames have their
+  // occlusion drawn in. Lining a drawn edge up with a real one is enough.
+  const helper = path.join(__dirname, '..', 'tools', 'bin', 'window-list')
+  if (existsSync(helper)) {
+    timers.push(
+      setInterval(() => {
+        if (!win || win.isDestroyed()) return
+        execFile(helper, [String(process.pid)], { timeout: 2000 }, (err, stdout) => {
+          if (err || !win || win.isDestroyed()) return
+          let list
+          try {
+            list = JSON.parse(stdout)
+          } catch {
+            return
+          }
+          const b = win.getBounds()
+          const local = []
+          for (const w of list) {
+            // Global screen coordinates -> coordinates inside the overlay.
+            const left = w.x - b.x
+            const top = w.y - b.y
+            if (left + w.w < 0 || left > b.width || top + w.h < 0 || top > b.height) continue
+            local.push({ id: w.id, owner: w.owner, left, top, width: w.w, height: w.h })
+            if (local.length >= HIDEABLE_WINDOWS) break
+          }
+          send('windows', local)
+        })
+      }, WINDOW_POLL_MS),
+    )
+  } else {
+    console.warn('[mouseos] tools/bin/window-list missing -- she will not find hiding places')
+  }
 
   // Frontmost application. Needs Accessibility permission the first time; if
   // it's denied we just never learn the app name and she carries on without

@@ -48,6 +48,7 @@ receives no input of its own:
 | cursor | `screen.getCursorScreenPoint()`, polled at 60Hz |
 | idleness | `powerMonitor.getSystemIdleTime()` — *real* system idle, so the nap means you actually left |
 | frontmost app | `osascript`, polled — needs Accessibility permission; without it she just never gets costumes |
+| everyone else's windows | `CGWindowListCopyWindowInfo` via [tools/window-list.swift](tools/window-list.swift) — **no permission prompt**, because only window *titles* need Screen Recording and we never ask for them |
 
 Open Spotify and she dances. Open VS Code and she puts on glasses. That table is
 `APP_MOODS` in [behaviors.ts](src/mouse/behaviors.ts) — one line per app.
@@ -56,11 +57,19 @@ Open Spotify and she dances. Open VS Code and she puts on glasses. That table is
 live reload. `npx electron . --probe` prints her live state to the terminal,
 which is the only way to inspect a window you can't click into.
 
+### Hiding against real windows
+
+An always-on-top overlay can never truly sit *behind* another app's window — so
+it doesn't try. The hiding frames have their occlusion drawn in (`hide/1` is cut
+off at the canvas's left edge, `hide/2` at its bottom), and she lines a drawn
+edge up with a real window edge. The illusion is identical and needs no
+z-ordering at all.
+
+`npm run overlay` compiles the helper on demand. Without a Swift toolchain it
+warns and she simply never finds a hiding place.
+
 ### Not yet real on the desktop
 
-- **Hiding behind windows** works in browser mode but needs other apps' window
-  geometry to work for real (`CGWindowListCopyWindowInfo` via a native helper).
-  Right now she just bolts and cowers in the open.
 - **Carrying files** needs a `CGEventTap` to see drags that aren't aimed at our
   window, plus Finder scripting to know what's being dragged. That's the one
   feature that gets meaningfully harder outside the browser.

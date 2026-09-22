@@ -5,9 +5,10 @@
   "type": "module",
   "scripts": {
     "dev": "npm run art:prep && vite",
-    "overlay": "npm run art:prep && vite build && electron .",
+    "overlay": "npm run art:prep && npm run helper:build && vite build && electron .",
     "overlay:dev": "electron . --dev",
     "art:prep": "node tools/prep-art.mjs",
+    "helper:build": "node tools/build-helper.mjs",
     "build": "npm run art:prep && tsc --noEmit && vite build",
     "preview": "vite preview"
   },

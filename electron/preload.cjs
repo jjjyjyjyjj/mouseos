@@ -12,5 +12,7 @@ contextBridge.exposeInMainWorld('mouseNative', {
   onApp: (cb) => ipcRenderer.on('app', (_e, n) => cb(n)),
   /** Whether she's switched on. The page stops its loop entirely when off. */
   onEnabled: (cb) => ipcRenderer.on('enabled', (_e, on) => cb(!!on)),
+  /** Everyone else's windows, in overlay coordinates, front-to-back. */
+  onWindows: (cb) => ipcRenderer.on('windows', (_e, list) => cb(list)),
   setClickable: (yes) => ipcRenderer.send('clickable', !!yes),
 })

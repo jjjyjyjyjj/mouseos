@@ -1,5 +1,6 @@
 import { bus } from '../bus'
 import { dist } from '../mouse/motion'
+import { setNativeWindows, type NativeWindow } from './windows'
 import type { World } from '../mouse/world'
 
 /**
@@ -13,6 +14,7 @@ export interface NativeBridge {
   onIdle(cb: (seconds: number) => void): void
   onApp(cb: (name: string) => void): void
   onEnabled?(cb: (on: boolean) => void): void
+  onWindows?(cb: (list: NativeWindow[]) => void): void
   setClickable(yes: boolean): void
 }
 
@@ -49,6 +51,9 @@ export function bootNative(bridge: NativeBridge, world: World): void {
   })
 
   bridge.onApp((name) => bus.emit('app.open', { app: normalizeApp(name) }))
+
+  // Real windows to hide against.
+  bridge.onWindows?.((list) => setNativeWindows(list))
 }
 
 /**

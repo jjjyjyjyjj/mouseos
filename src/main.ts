@@ -2,6 +2,7 @@ import './style.css'
 import { bus } from './bus'
 import { buildDesktop } from './os/desktop'
 import { bootNative, nativeBridge, syncClickable } from './os/native'
+import { setNativeWindows, windowRects } from './os/windows'
 import { Mouse } from './mouse'
 
 const root = document.getElementById('os') as HTMLElement
@@ -34,8 +35,15 @@ if (native) {
   bootWeb()
 }
 
-/** Poke at her from the console: `mouseos.world.drives.fear = 1` */
-;(window as unknown as { mouseos: Mouse }).mouseos = mouse
+/**
+ * Poke at her from the console: `mouseos.world.drives.fear = 1`.
+ * `setNativeWindows` lets the sandbox stand in real window rects, which is the
+ * only way to exercise the overlay's hiding without driving the real cursor.
+ */
+;(window as unknown as { mouseos: unknown }).mouseos = Object.assign(mouse, {
+  setNativeWindows,
+  windowRects,
+})
 
 /* --- perception, browser flavour ---------------------------------------- */
 function bootWeb(): void {
