@@ -236,10 +236,11 @@ const Dropped: Behavior = {
     yield anim('flail')
     yield coast(340)
     yield anim('cower', 1500)
+    // She holds the flattened pose through this, then picks herself up by
+    // simply walking off. No startle at the end -- being dropped is over.
     yield say('...', 800)
     w.drives.fear = 0
     w.drives.habituation = clamp(w.drives.habituation + 0.12, 0, 1)
-    yield anim('startle', 500)
   },
 }
 
