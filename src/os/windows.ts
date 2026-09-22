@@ -1,4 +1,3 @@
-import { allWindowIds } from './desktop'
 import { zorder } from './zorder'
 
 /**
@@ -51,7 +50,7 @@ export function windowRects(): WinRect[] {
   if (native) return native
 
   const out: WinRect[] = []
-  for (const id of allWindowIds()) {
+  for (const id of zorder.frontToBack()) {
     const r = zorder.rectOf(id)
     if (!r) continue
     out.push({

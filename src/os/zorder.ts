@@ -51,6 +51,11 @@ export class ZOrder {
     return null
   }
 
+  /** Front-to-back, the same order the real window list arrives in. */
+  frontToBack(): string[] {
+    return [...this.order].reverse()
+  }
+
   rectOf(id: string): DOMRect | null {
     return this.els.get(id)?.getBoundingClientRect() ?? null
   }

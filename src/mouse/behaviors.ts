@@ -117,12 +117,20 @@ function hideoutsFor(w: World, id: string, r: WinRect): Hideout[] {
   return out
 }
 
+/**
+ * She hides against the frontmost window she can actually reach.
+ *
+ * Not the nearest one: the overlay draws her above everything, so hiding
+ * against a window that something else covers would leave her floating on top
+ * of whatever is in front of it. Only the window on top is safe. Windows
+ * arrive front-to-back, so this takes the first that offers a usable spot.
+ */
 function findHideout(w: World): Hideout | null {
-  let best: Hideout | null = null
-  let bestScore = -Infinity
-
   for (const r of windowRects()) {
     if (r.width < 80) continue
+
+    let best: Hideout | null = null
+    let bestScore = -Infinity
 
     for (const spot of hideoutsFor(w, r.id, r)) {
       // Has to be somewhere she can actually stand.
@@ -135,15 +143,17 @@ function findHideout(w: World): Hideout | null {
       ) {
         continue
       }
-      // Prefer hideouts close to her but far from the cursor.
+      // Within that one window, prefer the side furthest from the cursor.
       const s = dist(spot.point, w.cursor) * 1.4 - dist(spot.point, w.critter.pos)
       if (s > bestScore) {
         bestScore = s
         best = spot
       }
     }
+
+    if (best) return best
   }
-  return best
+  return null
 }
 
 /** Cursor sits still long enough and she comes to investigate. */

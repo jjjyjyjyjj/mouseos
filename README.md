@@ -59,6 +59,12 @@ which is the only way to inspect a window you can't click into.
 
 ### Hiding against real windows
 
+She always hides against the **frontmost** window she can reach, not the nearest
+one. The overlay draws her above everything, so hiding against a window that
+something else covers would leave her floating on top of whatever is in front of
+it — only the window on top is safe. If the front window offers nowhere to stand
+(jammed into a screen corner, say) she falls through to the next one back.
+
 An always-on-top overlay can never truly sit *behind* another app's window — so
 it doesn't try. The hiding frames have their occlusion drawn in (`hide/1` is cut
 off at the canvas's left edge, `hide/2` at its bottom), and she lines a drawn
