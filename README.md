@@ -1,6 +1,5 @@
 # MouseOS
-
-One small mouse, living on your desktop.
+A mouse, living on your desktop.
 
 ```bash
 npm install
@@ -8,11 +7,10 @@ npm run overlay     # she runs loose on your real macOS desktop
 npm run dev         # development only: a fake desktop in a browser tab
 ```
 
-Move the cursor at her, leave her alone, click her four times fast, or walk away
+Move the cursor towards her, leave her alone, click her four times fast, or walk away
 for 30 seconds. **Pick her up** — press and drag and she dangles, flailing; let
-go mid-swing and she keeps the throw's momentum, sails, lands and crumples. A
-press that *doesn't* travel is still just a poke, so clicking her repeatedly
-still makes her furious. Press **D** for the drives HUD.
+go mid-swing and she keeps the throw's momentum. Clicking her repeatedly
+still makes her furious.
 
 `npm run dev` is a simulated desktop for building behaviours with devtools open.
 It can never reach a real screen: without its system bridge the app reports the
@@ -70,19 +68,6 @@ the jump from a web page to the real desktop cheap: [os/native.ts](src/os/native
 emits the same `cursor.move` / `app.open` events from macOS, and not one line of
 the brain changed. "Open Figma → she picks up a pen" is a new `Behavior`, not a
 change to OS code.
-
-```
-os/*  ──emit──▶  bus  ──▶  world (perception + drives)
-                             │
-                             ▼
-                          brain (utility scoring)
-                             │
-                             ▼
-                       behaviors (generators)
-                             │
-                             ▼
-                          sprite (DOM)
-```
 
 ## The brain
 
