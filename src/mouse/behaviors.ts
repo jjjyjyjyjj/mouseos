@@ -124,7 +124,17 @@ const HIDE_INK: Record<string, { l: number; t: number; r: number; b: number }> =
   hideTop: { l: 59 / 384, t: 300 / 384, r: 306 / 384, b: 383 / 384 },
 }
 
-/** Is the visible part of this pose actually on screen? */
+/**
+ * Is the visible part of this pose actually on screen?
+ *
+ * Touching an edge is fine, and required: the side poses stand her feet on the
+ * window's bottom edge, so a window sitting at the bottom of the screen -- most
+ * of them -- puts her ink exactly on the screen's bottom edge. Demanding any
+ * gap there rejected both side spots on nearly every real window and left the
+ * top pose as the only survivor.
+ */
+const BOTTOM_SLACK = 24
+
 function hideSpotFits(w: World, spot: Hideout): boolean {
   const ink = HIDE_INK[spot.anim]
   if (!ink) return false
@@ -132,12 +142,12 @@ function hideSpotFits(w: World, spot: Hideout): boolean {
   const size = half * 2
   const left = spot.point.x - half
   const top = spot.point.y + w.spriteCenterDy - half
-  const EDGE = 2
   return (
-    left + ink.l * size >= EDGE &&
-    left + ink.r * size <= w.bounds.w - EDGE &&
-    top + ink.t * size >= EDGE &&
-    top + ink.b * size <= w.bounds.h - EDGE
+    left + ink.l * size >= 0 &&
+    left + ink.r * size <= w.bounds.w &&
+    top + ink.t * size >= 0 &&
+    // Her feet may run a little past the bottom; nobody misses a clipped foot.
+    top + ink.b * size <= w.bounds.h + BOTTOM_SLACK
   )
 }
 /** How much she'll detour to put distance between a hiding place and the cursor. */
@@ -156,7 +166,10 @@ function hideoutsFor(w: World, id: string, r: WinRect): Hideout[] {
   // alignment below is solved for the canvas, then converted back.
   const dy = w.spriteCenterDy
   const out: Hideout[] = []
-  const feetY = r.bottom - (HIDE_SIDE_FOOT - 0.5) * size - dy
+  // She stands at the foot of the window -- but a window often runs off the
+  // bottom of the screen, and she can't stand below the floor.
+  const floor = Math.min(r.bottom, w.bounds.h)
+  const feetY = floor - (HIDE_SIDE_FOOT - 0.5) * size - dy
 
   // Standing just past the window's right edge, her left half behind it.
   out.push({ windowId: id, anim: 'hideSide', point: v(r.right + half, feetY) })
@@ -192,9 +205,13 @@ function hideoutsFor(w: World, id: string, r: WinRect): Hideout[] {
  * front one counts -- a fullscreen window behind a small one isn't in the way.
  */
 function screenIsCovered(w: World): boolean {
-  const front = windowRects()[0]
-  if (!front) return false
-  return front.width >= w.bounds.w * 0.95 && front.height >= w.bounds.h * 0.95
+  const f = windowRects()[0]
+  if (!f) return false
+  // How much of the screen it actually covers, not how big it is -- a large
+  // window on a second display overlaps none of this one.
+  const ix = Math.max(0, Math.min(f.right, w.bounds.w) - Math.max(f.left, 0))
+  const iy = Math.max(0, Math.min(f.bottom, w.bounds.h) - Math.max(f.top, 0))
+  return ix * iy >= w.bounds.w * w.bounds.h * 0.95
 }
 
 function findHideout(w: World): Hideout | null {

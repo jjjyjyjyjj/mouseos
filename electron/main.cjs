@@ -164,7 +164,8 @@ function startPerception() {
             // Global screen coordinates -> coordinates inside the overlay.
             const left = w.x - b.x
             const top = w.y - b.y
-            if (left + w.w < 0 || left > b.width || top + w.h < 0 || top > b.height) continue
+            // >= : a window starting exactly at our right edge is on the next display
+            if (left + w.w <= 0 || left >= b.width || top + w.h <= 0 || top >= b.height) continue
             local.push({ id: w.id, owner: w.owner, left, top, width: w.w, height: w.h })
             if (local.length >= HIDEABLE_WINDOWS) break
           }
