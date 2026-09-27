@@ -1,6 +1,6 @@
 {
   "facing": "left",
-  "scale": 0.44,
+  "scale": 0.506,
   "fps": 8,
   "alias": {
     "idle": "walk#1",
