@@ -7,6 +7,8 @@ export interface Critter {
   facing: 1 | -1
   anim: string
   say: string | null
+  /** Exempt from the roaming margins -- she's tucked against a screen edge. */
+  anchored: boolean
 }
 
 /**
@@ -52,6 +54,7 @@ export class World {
     facing: 1,
     anim: 'idle',
     say: null,
+    anchored: false,
   }
 
   drives: Drives = { fear: 0, annoy: 0, sleep: 0, curiosity: 0, habituation: 0 }

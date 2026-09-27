@@ -1,4 +1,5 @@
 import { bus } from '../bus'
+import { describeHideouts } from './behaviors'
 import { usingNativeWindows, windowRects } from '../os/windows'
 import { MOUSE_LAYER, zorder } from '../os/zorder'
 import { behaviors } from './behaviors'
@@ -127,7 +128,7 @@ export class Mouse {
     const f = (n: number) => n.toFixed(2)
     const c = this.world.critter
     return `${this.brain.current?.id ?? '-'} / ${c.anim}   app:${this.world.focusedApp ?? '?'}
-at ${Math.round(c.pos.x)},${Math.round(c.pos.y)}  windows:${windowRects().length}${usingNativeWindows() ? ' (real)' : ''}
+at ${Math.round(c.pos.x)},${Math.round(c.pos.y)}  windows:${windowRects().length}${usingNativeWindows() ? ' (real)' : ''} hide:${describeHideouts(this.world)}
 fear ${f(d.fear)}  annoy ${f(d.annoy)}
 sleep ${f(d.sleep)}  curious ${f(d.curiosity)}
 habituation ${f(d.habituation)}`

@@ -151,13 +151,18 @@ export function integrate(w: World, dt: number): void {
   c.pos.x += c.vel.x * dt
   c.pos.y += c.vel.y * dt
 
-  const m = REACHABLE.side
-  const top = REACHABLE.top
-  const bottom = w.bounds.h - REACHABLE.bottom
-  if (c.pos.x < m || c.pos.x > w.bounds.w - m) c.vel.x *= -0.4
-  if (c.pos.y < top || c.pos.y > bottom) c.vel.y *= -0.4
-  c.pos.x = clamp(c.pos.x, m, w.bounds.w - m)
-  c.pos.y = clamp(c.pos.y, top, bottom)
+  // Hiding places sit hard against the screen edges, so she's exempt from the
+  // roaming margins while heading to one -- but she still has to face the way
+  // she's going.
+  if (!c.anchored) {
+    const m = REACHABLE.side
+    const top = REACHABLE.top
+    const bottom = w.bounds.h - REACHABLE.bottom
+    if (c.pos.x < m || c.pos.x > w.bounds.w - m) c.vel.x *= -0.4
+    if (c.pos.y < top || c.pos.y > bottom) c.vel.y *= -0.4
+    c.pos.x = clamp(c.pos.x, m, w.bounds.w - m)
+    c.pos.y = clamp(c.pos.y, top, bottom)
+  }
 
   if (Math.abs(c.vel.x) > 16) c.facing = c.vel.x > 0 ? 1 : -1
 }

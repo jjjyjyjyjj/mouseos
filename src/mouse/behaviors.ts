@@ -1,6 +1,6 @@
 import { windowRects, type WinRect } from '../os/windows'
 import { clamp, dist, rand, v, type Vec } from './motion'
-import { anim, canStandAt, coast, fleeFrom, held, say, snap, walkTo, type Routine } from './steps'
+import { anim, coast, fleeFrom, held, say, snap, walkTo, type Routine } from './steps'
 import type { Behavior } from './brain'
 import type { World } from './world'
 
@@ -67,6 +67,10 @@ const HideAtWindow: Behavior = {
     const hideout = findHideout(w)
     if (!hideout) return
 
+    // Hiding places sit hard against screen edges by their nature, well
+    // outside the margins that keep her fully visible while roaming. Let her
+    // off the leash until she's done hiding.
+    w.critter.anchored = true
     yield walkTo(hideout.point, { speed: 460, anim: 'run', tol: 22 })
     yield snap(hideout.point)
     // She stays on top. The occlusion is drawn into the frames, so putting her
@@ -76,6 +80,9 @@ const HideAtWindow: Behavior = {
     // She habituates: a cursor that chases but never hurts gets less scary.
     w.drives.habituation = clamp(w.drives.habituation + 0.18, 0, 1)
     yield anim('idle', 700)
+  },
+  exit(w) {
+    w.critter.anchored = false
   },
 }
 
@@ -103,6 +110,36 @@ const HideUnderSheet: Behavior = {
  */
 /** hide/1: she's flush to the canvas's left edge, feet 86% of the way down. */
 const HIDE_SIDE_FOOT = 329 / 384
+
+/**
+ * Where the ink actually sits in each hiding frame, as a fraction of the
+ * canvas. Almost all of these frames is empty space -- hide/1 is 20px of mouse
+ * in a 169px canvas -- so whether a hiding place fits has to be judged on the
+ * ink, not on the canvas. Testing the canvas rejects nearly every real window,
+ * which are large and sit close to the screen edges.
+ */
+const HIDE_INK: Record<string, { l: number; t: number; r: number; b: number }> = {
+  hideSide: { l: 0 / 384, t: 107 / 384, r: 45 / 384, b: 329 / 384 },
+  hideSideLeft: { l: 339 / 384, t: 107 / 384, r: 384 / 384, b: 329 / 384 },
+  hideTop: { l: 59 / 384, t: 300 / 384, r: 306 / 384, b: 383 / 384 },
+}
+
+/** Is the visible part of this pose actually on screen? */
+function hideSpotFits(w: World, spot: Hideout): boolean {
+  const ink = HIDE_INK[spot.anim]
+  if (!ink) return false
+  const half = w.spriteHalf
+  const size = half * 2
+  const left = spot.point.x - half
+  const top = spot.point.y + w.spriteCenterDy - half
+  const EDGE = 2
+  return (
+    left + ink.l * size >= EDGE &&
+    left + ink.r * size <= w.bounds.w - EDGE &&
+    top + ink.t * size >= EDGE &&
+    top + ink.b * size <= w.bounds.h - EDGE
+  )
+}
 /** How much she'll detour to put distance between a hiding place and the cursor. */
 const CURSOR_AVOIDANCE = 0.4
 
@@ -172,10 +209,7 @@ function findHideout(w: World): Hideout | null {
     let bestScore = -Infinity
 
     for (const spot of hideoutsFor(w, r.id, r)) {
-      // Must be somewhere integrate will actually leave her. A spot outside
-      // this gets clamped on arrival, and the drawn edge silently stops
-      // meeting the window edge.
-      if (!canStandAt(w, spot.point)) continue
+      if (!hideSpotFits(w, spot)) continue
       // Nearest hiding place wins, so she ducks behind the edge she's already
       // next to instead of sprinting past the window to the far side. The
       // cursor term only breaks ties away from whatever is chasing her.
@@ -310,6 +344,20 @@ const AppMood: Behavior = {
     if (mood.say) yield say(mood.say, 1400)
     yield anim(mood.anim, 4200)
   },
+}
+
+/** For the --probe readout: what hiding places she can actually see. */
+export function describeHideouts(w: World): string {
+  if (screenIsCovered(w)) return 'sheet (screen covered)'
+  const spots: string[] = []
+  for (const r of windowRects()) {
+    if (r.width < 80) continue
+    for (const spot of hideoutsFor(w, r.id, r)) {
+      if (hideSpotFits(w, spot)) spots.push(spot.anim)
+    }
+    if (spots.length) break
+  }
+  return spots.length ? spots.join(',') : 'none'
 }
 
 export const behaviors: Behavior[] = [
