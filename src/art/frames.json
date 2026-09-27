@@ -12,7 +12,8 @@
     "stomp": "angry",
     "startle": "angry#1",
     "hideSide": "hide#1",
-    "hideTop": "hide#2"
+    "hideTop": "hide#2",
+    "hideFull": "hide-full"
   },
   "anims": {
     "idle": {
@@ -39,6 +40,10 @@
     },
     "hide": {
       "fixed": true
+    },
+    "hide-full": {
+      "fps": 3,
+      "loop": false
     }
   }
 }

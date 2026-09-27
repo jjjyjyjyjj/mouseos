@@ -44,32 +44,64 @@ const Flee: Behavior = {
     yield anim('startle', 600)
     yield fleeFrom((ww) => ww.cursor, 420)
 
-    const hideout = findHideout(w)
-    if (hideout) {
-      yield walkTo(hideout.point, { speed: 460, anim: 'run', tol: 22 })
-      yield snap(hideout.point)
-      // Only meaningful in the sandbox. Over the real desktop the overlay is
-      // always on top, and the drawn-in occlusion does the work instead.
-      if (!usingNativeWindows()) {
-        zorder.putBelow(MOUSE_LAYER, hideout.windowId)
-        w.critter.hidingBehind = hideout.windowId
-      }
-      yield anim(hideout.anim, rand(1800, 3400))
-      // She habituates: a cursor that chases but never hurts gets less scary.
-      w.drives.habituation = clamp(w.drives.habituation + 0.18, 0, 1)
-      yield anim('idle', 700)
-    } else {
+    // Bolting is all this does. Where she goes to ground is a separate
+    // behaviour -- and only worth handing off to if somewhere exists.
+    w.pendingHide = screenIsCovered(w) || findHideout(w) !== null
+    if (!w.pendingHide) {
       yield fleeFrom((ww) => ww.cursor, 500)
       yield anim('startle', 900)
       w.drives.habituation = clamp(w.drives.habituation + 0.1, 0, 1)
     }
     w.drives.fear *= 0.3
   },
+}
+
+/**
+ * Gone to ground against a window edge. Takes over from Flee once she's run.
+ */
+const HideAtWindow: Behavior = {
+  id: 'hide-window',
+  priority: 85,
+  score: (w) => (w.pendingHide && !screenIsCovered(w) && findHideout(w) ? 8 : 0),
+  *run(w): Routine {
+    w.pendingHide = false
+    const hideout = findHideout(w)
+    if (!hideout) return
+
+    yield walkTo(hideout.point, { speed: 460, anim: 'run', tol: 22 })
+    yield snap(hideout.point)
+    // Only meaningful in the sandbox. Over the real desktop the overlay is
+    // always on top, and the drawn-in occlusion does the work instead.
+    if (!usingNativeWindows()) {
+      zorder.putBelow(MOUSE_LAYER, hideout.windowId)
+      w.critter.hidingBehind = hideout.windowId
+    }
+    yield anim(hideout.anim, rand(1800, 3400))
+    // She habituates: a cursor that chases but never hurts gets less scary.
+    w.drives.habituation = clamp(w.drives.habituation + 0.18, 0, 1)
+    yield anim('idle', 700)
+  },
   exit(w) {
     if (w.critter.hidingBehind) {
       zorder.raise(MOUSE_LAYER)
       w.critter.hidingBehind = null
     }
+  },
+}
+
+/**
+ * A window filling the screen leaves no edge to hide behind, so she throws
+ * something over herself where she stands and holds still under it.
+ */
+const HideUnderSheet: Behavior = {
+  id: 'hide-sheet',
+  priority: 85,
+  score: (w) => (w.pendingHide && screenIsCovered(w) ? 8 : 0),
+  *run(w): Routine {
+    w.pendingHide = false
+    yield anim('hideFull', rand(2600, 4200))
+    w.drives.habituation = clamp(w.drives.habituation + 0.18, 0, 1)
+    yield anim('idle', 600)
   },
 }
 
@@ -125,7 +157,21 @@ function hideoutsFor(w: World, id: string, r: WinRect): Hideout[] {
  * of whatever is in front of it. Only the window on top is safe. Windows
  * arrive front-to-back, so this takes the first that offers a usable spot.
  */
+/**
+ * True when the frontmost window covers essentially the whole screen. Only the
+ * front one counts -- a fullscreen window behind a small one isn't in the way.
+ */
+function screenIsCovered(w: World): boolean {
+  const front = windowRects()[0]
+  if (!front) return false
+  return front.width >= w.bounds.w * 0.95 && front.height >= w.bounds.h * 0.95
+}
+
 function findHideout(w: World): Hideout | null {
+  // Nothing behind a fullscreen window is reachable, and its own edges are off
+  // screen, so there is no hiding place at all.
+  if (screenIsCovered(w)) return null
+
   for (const r of windowRects()) {
     if (r.width < 80) continue
 
@@ -271,4 +317,16 @@ const AppMood: Behavior = {
   },
 }
 
-export const behaviors: Behavior[] = [Dragged, Dropped, Loaf, Wander, Flee, Curious, Annoyed, Nap, AppMood]
+export const behaviors: Behavior[] = [
+  Dragged,
+  Dropped,
+  HideAtWindow,
+  HideUnderSheet,
+  Loaf,
+  Wander,
+  Flee,
+  Curious,
+  Annoyed,
+  Nap,
+  AppMood,
+]

@@ -43,6 +43,8 @@ export class World {
   grabOffset: Vec = v(0, 0)
   /** Set on release, cleared by the recovery behaviour. One shot. */
   pendingDrop = false
+  /** Flee sets this when she's bolted and somewhere to hide exists. One shot. */
+  pendingHide = false
   focusedApp: string | null = null
   appOpenedAt = 0
 
