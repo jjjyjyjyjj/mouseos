@@ -82,10 +82,12 @@ export interface FramesConfig {
       loop?: boolean
       offset?: [number, number]
       /**
-       * Never mirror this one. For art whose occlusion is drawn in -- a frame
-       * cut off at the canvas edge only lines up with a window one way round.
+       * Never mirror this one from her facing. For art whose occlusion is drawn
+       * in -- a frame cut off at the canvas edge only lines up one way round.
        */
       fixed?: boolean
+      /** With `fixed`, draw it mirrored: the same cut against the other edge. */
+      flip?: boolean
     }
   >
 }
@@ -404,7 +406,9 @@ class FramesSprite implements Sprite {
     const [ox, oy] = opts?.offset ?? this.cfg.anims?.[key]?.offset ?? [0, 0]
     // Pre-occluded frames are drawn against one particular edge, so mirroring
     // them would put the cut on the wrong side.
-    const sx = opts?.fixed ? this.scale : this.scale * s.facing * this.flip
+    const sx = opts?.fixed
+      ? this.scale * (opts.flip ? -1 : 1)
+      : this.scale * s.facing * this.flip
     this.img.style.transform =
       `scale(${sx}, ${this.scale}) translate(calc(-50% + ${ox}px), calc(-50% + ${oy}px))`
 

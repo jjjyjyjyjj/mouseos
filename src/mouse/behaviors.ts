@@ -103,6 +103,8 @@ const HideUnderSheet: Behavior = {
  */
 /** hide/1: she's flush to the canvas's left edge, feet 86% of the way down. */
 const HIDE_SIDE_FOOT = 329 / 384
+/** How much she'll detour to put distance between a hiding place and the cursor. */
+const CURSOR_AVOIDANCE = 0.4
 
 interface Hideout {
   windowId: string
@@ -117,13 +119,14 @@ function hideoutsFor(w: World, id: string, r: WinRect): Hideout[] {
   // alignment below is solved for the canvas, then converted back.
   const dy = w.spriteCenterDy
   const out: Hideout[] = []
+  const feetY = r.bottom - (HIDE_SIDE_FOOT - 0.5) * size - dy
 
   // Standing just past the window's right edge, her left half behind it.
-  out.push({
-    windowId: id,
-    anim: 'hideSide',
-    point: v(r.right + half, r.bottom - (HIDE_SIDE_FOOT - 0.5) * size - dy),
-  })
+  out.push({ windowId: id, anim: 'hideSide', point: v(r.right + half, feetY) })
+
+  // The same frame mirrored, against the left edge, so she never has to cross
+  // the screen to reach the only side she can hide on.
+  out.push({ windowId: id, anim: 'hideSideLeft', point: v(r.left - half, feetY) })
 
   // Peeking over the top edge, everything below it hidden.
   if (r.top > half * 0.8) {
@@ -173,8 +176,10 @@ function findHideout(w: World): Hideout | null {
       // this gets clamped on arrival, and the drawn edge silently stops
       // meeting the window edge.
       if (!canStandAt(w, spot.point)) continue
-      // Within that one window, prefer the side furthest from the cursor.
-      const s = dist(spot.point, w.cursor) * 1.4 - dist(spot.point, w.critter.pos)
+      // Nearest hiding place wins, so she ducks behind the edge she's already
+      // next to instead of sprinting past the window to the far side. The
+      // cursor term only breaks ties away from whatever is chasing her.
+      const s = CURSOR_AVOIDANCE * dist(spot.point, w.cursor) - dist(spot.point, w.critter.pos)
       if (s > bestScore) {
         bestScore = s
         best = spot

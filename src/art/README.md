@@ -108,6 +108,10 @@ window's top. They're marked `"fixed": true` in frames.json, which stops them
 being mirrored — a frame cut off on one side only works one way round. Keep new
 hiding frames flush to whichever canvas edge meets the window.
 
+`hide/1` is used for both sides: against a window's right edge as drawn, and
+mirrored against its left edge, so she can duck behind whichever side she's
+already next to. That's the `flip` flag in frames.json.
+
 `hide-full` is the fullscreen case: a window filling the screen leaves no edge
 to hide against, so she pulls something over herself where she stands. Four
 frames, `loop: false`, so it holds on the last one with her completely covered.

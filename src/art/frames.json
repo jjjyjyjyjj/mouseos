@@ -13,7 +13,8 @@
     "startle": "angry#1",
     "hideSide": "hide#1",
     "hideTop": "hide#2",
-    "hideFull": "hide-full"
+    "hideFull": "hide-full",
+    "hideSideLeft": "hide#1"
   },
   "anims": {
     "idle": {
@@ -44,6 +45,10 @@
     "hide-full": {
       "fps": 3,
       "loop": false
+    },
+    "hideSideLeft": {
+      "fixed": true,
+      "flip": true
     }
   }
 }
