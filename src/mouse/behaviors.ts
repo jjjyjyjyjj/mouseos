@@ -1,5 +1,4 @@
-import { usingNativeWindows, windowRects, type WinRect } from '../os/windows'
-import { MOUSE_LAYER, zorder } from '../os/zorder'
+import { windowRects, type WinRect } from '../os/windows'
 import { clamp, dist, rand, v, type Vec } from './motion'
 import { anim, canStandAt, coast, fleeFrom, held, say, snap, walkTo, type Routine } from './steps'
 import type { Behavior } from './brain'
@@ -70,22 +69,13 @@ const HideAtWindow: Behavior = {
 
     yield walkTo(hideout.point, { speed: 460, anim: 'run', tol: 22 })
     yield snap(hideout.point)
-    // Only meaningful in the sandbox. Over the real desktop the overlay is
-    // always on top, and the drawn-in occlusion does the work instead.
-    if (!usingNativeWindows()) {
-      zorder.putBelow(MOUSE_LAYER, hideout.windowId)
-      w.critter.hidingBehind = hideout.windowId
-    }
+    // She stays on top. The occlusion is drawn into the frames, so putting her
+    // behind the window buys nothing -- and it used to drag her under the
+    // window's drop shadow, which washed the visible sliver out to nothing.
     yield anim(hideout.anim, rand(1800, 3400))
     // She habituates: a cursor that chases but never hurts gets less scary.
     w.drives.habituation = clamp(w.drives.habituation + 0.18, 0, 1)
     yield anim('idle', 700)
-  },
-  exit(w) {
-    if (w.critter.hidingBehind) {
-      zorder.raise(MOUSE_LAYER)
-      w.critter.hidingBehind = null
-    }
   },
 }
 

@@ -118,7 +118,6 @@ export class Mouse {
 
     this.sprite.el.style.transform =
       `translate3d(${(c.pos.x - BOX / 2).toFixed(1)}px, ${(c.pos.y + CENTER_DY - BOX / 2).toFixed(1)}px, 0)`
-    this.sprite.el.classList.toggle('is-hidden-behind', !!c.hidingBehind)
     this.sprite.update({ anim: c.anim, facing: c.facing, t: this.animT, say: c.say })
   }
 

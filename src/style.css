@@ -112,7 +112,6 @@ html, body {
 }
 .mo__svg { pointer-events: auto; overflow: visible; display: block; }
 .mo__sheet { pointer-events: auto; background-repeat: no-repeat; }
-.mo.is-hidden-behind { filter: brightness(0.94); }
 
 .mo__bubble {
   position: absolute; top: -14px; left: 62px;
