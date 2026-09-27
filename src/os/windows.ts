@@ -1,4 +1,4 @@
-import { zorder } from './zorder'
+import { MOUSE_LAYER, zorder } from './zorder'
 
 /**
  * Where the windows are.
@@ -51,6 +51,10 @@ export function windowRects(): WinRect[] {
 
   const out: WinRect[] = []
   for (const id of zorder.frontToBack()) {
+    // She's in the stacking order too, and usually on top of it. Without this
+    // she picks her own sprite as the frontmost window and hides behind
+    // herself.
+    if (id === MOUSE_LAYER) continue
     const r = zorder.rectOf(id)
     if (!r) continue
     out.push({

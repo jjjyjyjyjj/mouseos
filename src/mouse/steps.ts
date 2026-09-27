@@ -125,17 +125,35 @@ export function updateStep(step: Step, w: World, dt: number): boolean {
   }
 }
 
+/**
+ * Where she's allowed to stand. Margins allow for the drawn sprite being wider
+ * than her logical footprint, so she isn't clipped against the screen edges.
+ *
+ * Anything that picks a spot for her has to test against *these* -- a position
+ * that passes some other check and then gets clamped here lands somewhere it
+ * wasn't meant to, which is invisible until the art has to line up with
+ * something.
+ */
+export const REACHABLE = { side: 62, top: 40, bottom: 110 }
+
+export function canStandAt(w: World, p: Vec): boolean {
+  return (
+    p.x >= REACHABLE.side &&
+    p.x <= w.bounds.w - REACHABLE.side &&
+    p.y >= REACHABLE.top &&
+    p.y <= w.bounds.h - REACHABLE.bottom
+  )
+}
+
 /** Integrate position, keep her on screen, and derive facing from motion. */
 export function integrate(w: World, dt: number): void {
   const c = w.critter
   c.pos.x += c.vel.x * dt
   c.pos.y += c.vel.y * dt
 
-  // Margins allow for the drawn sprite being wider than her logical footprint,
-  // so she doesn't get clipped against the screen edges.
-  const m = 62
-  const top = 40
-  const bottom = w.bounds.h - 110
+  const m = REACHABLE.side
+  const top = REACHABLE.top
+  const bottom = w.bounds.h - REACHABLE.bottom
   if (c.pos.x < m || c.pos.x > w.bounds.w - m) c.vel.x *= -0.4
   if (c.pos.y < top || c.pos.y > bottom) c.vel.y *= -0.4
   c.pos.x = clamp(c.pos.x, m, w.bounds.w - m)

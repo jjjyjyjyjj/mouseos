@@ -1,7 +1,7 @@
 import { usingNativeWindows, windowRects, type WinRect } from '../os/windows'
 import { MOUSE_LAYER, zorder } from '../os/zorder'
 import { clamp, dist, rand, v, type Vec } from './motion'
-import { anim, coast, fleeFrom, held, say, snap, walkTo, type Routine } from './steps'
+import { anim, canStandAt, coast, fleeFrom, held, say, snap, walkTo, type Routine } from './steps'
 import type { Behavior } from './brain'
 import type { World } from './world'
 
@@ -133,16 +133,10 @@ function findHideout(w: World): Hideout | null {
     let bestScore = -Infinity
 
     for (const spot of hideoutsFor(w, r.id, r)) {
-      // Has to be somewhere she can actually stand.
-      const m = w.spriteHalf * 0.5
-      if (
-        spot.point.x < m ||
-        spot.point.x > w.bounds.w - m ||
-        spot.point.y < m ||
-        spot.point.y > w.bounds.h - m
-      ) {
-        continue
-      }
+      // Must be somewhere integrate will actually leave her. A spot outside
+      // this gets clamped on arrival, and the drawn edge silently stops
+      // meeting the window edge.
+      if (!canStandAt(w, spot.point)) continue
       // Within that one window, prefer the side furthest from the cursor.
       const s = dist(spot.point, w.cursor) * 1.4 - dist(spot.point, w.critter.pos)
       if (s > bestScore) {
