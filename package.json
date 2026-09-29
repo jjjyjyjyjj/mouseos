@@ -10,12 +10,47 @@
     "art:prep": "node tools/prep-art.mjs",
     "helper:build": "node tools/build-helper.mjs",
     "build": "npm run art:prep && tsc --noEmit && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "dist": "npm run art:prep && npm run helper:build && vite build && electron-builder --mac"
   },
   "devDependencies": {
     "electron": "^44.3.0",
+    "electron-builder": "^26.15.3",
     "typescript": "^5.6.3",
     "vite": "^5.4.10"
   },
-  "main": "electron/main.cjs"
+  "main": "electron/main.cjs",
+  "build": {
+    "appId": "com.jjjyjyjyjj.mouseos",
+    "productName": "MouseOS",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**/*",
+      "electron/**/*",
+      "package.json"
+    ],
+    "extraResources": [
+      {
+        "from": "tools/bin/window-list",
+        "to": "window-list"
+      }
+    ],
+    "mac": {
+      "target": [
+        {
+          "target": "dmg",
+          "arch": [
+            "universal"
+          ]
+        }
+      ],
+      "category": "public.app-category.entertainment",
+      "extendInfo": {
+        "LSUIElement": true,
+        "NSAppleEventsUsageDescription": "MouseOS checks which app is in front, so she can react to it."
+      }
+    }
+  }
 }

@@ -145,7 +145,11 @@ function startPerception() {
   // The overlay is always-on-top and can never truly sit behind another app's
   // window -- but it doesn't need to, because the hiding frames have their
   // occlusion drawn in. Lining a drawn edge up with a real one is enough.
-  const helper = path.join(__dirname, '..', 'tools', 'bin', 'window-list')
+  // Packaged, the helper sits in Resources and not inside the asar -- an
+  // executable can't be run from in there, and this path wouldn't exist anyway.
+  const helper = app.isPackaged
+    ? path.join(process.resourcesPath, 'window-list')
+    : path.join(__dirname, '..', 'tools', 'bin', 'window-list')
   if (existsSync(helper)) {
     timers.push(
       setInterval(() => {
