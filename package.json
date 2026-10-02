@@ -50,7 +50,9 @@
       "extendInfo": {
         "LSUIElement": true,
         "NSAppleEventsUsageDescription": "MouseOS checks which app is in front, so she can react to it."
-      }
-    }
+      },
+      "icon": "build/icon.png"
+    },
+    "afterPack": "tools/adhoc-sign.cjs"
   }
 }

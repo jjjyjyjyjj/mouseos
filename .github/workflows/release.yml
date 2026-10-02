@@ -1,0 +1,36 @@
+name: Release
+
+# Push a tag and a .dmg appears on the release. Free for public repos, and it
+# means this machine isn't the only one that can ship.
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  macos:
+    # arm64 runner; electron-builder fetches both slices for the universal build
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+
+      - run: npm ci
+
+      # swiftc comes with the runner's Xcode, so the window helper builds here
+      - run: npm run dist
+
+      - name: Checksum for the Homebrew cask
+        run: shasum -a 256 release/*.dmg
+
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: release/*.dmg
+          generate_release_notes: true
