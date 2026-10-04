@@ -54,5 +54,11 @@
       "icon": "build/icon.png"
     },
     "afterPack": "tools/adhoc-sign.cjs"
+  },
+  "license": "MIT",
+  "author": "jia (@jjjyjyjyjj)",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/jjjyjyjyjj/mouseos.git"
   }
 }

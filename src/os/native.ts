@@ -15,6 +15,7 @@ export interface NativeBridge {
   onApp(cb: (name: string) => void): void
   onEnabled?(cb: (on: boolean) => void): void
   onWindows?(cb: (list: NativeWindow[]) => void): void
+  refreshWindows?(): void
   setClickable(yes: boolean): void
 }
 
@@ -61,6 +62,21 @@ export function bootNative(bridge: NativeBridge, world: World): void {
  * We punch a temporary hole when the pointer is on top of her, which is the
  * only way clicking her is possible at all.
  */
+/**
+ * Window positions are polled slowly to keep the app's energy use down, which
+ * would leave her hiding against stale geometry. So the moment she takes
+ * fright -- before she's finished bolting, let alone chosen a hiding place --
+ * we ask for one fresh read.
+ */
+const FRIGHT = 0.25
+let wasCalm = true
+
+export function refreshWindowsOnFright(bridge: NativeBridge, world: World): void {
+  const frightened = world.drives.fear > FRIGHT
+  if (frightened && wasCalm) bridge.refreshWindows?.()
+  wasCalm = !frightened
+}
+
 const HOLE_RADIUS = 44
 let clickable = false
 

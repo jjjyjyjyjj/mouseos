@@ -1,0 +1,38 @@
+MIT License
+
+Copyright (c) 2026 jia (@jjjyjyjyjj)
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+---------------------------------------------------------------------------
+THE ARTWORK IS NOT COVERED BY THE ABOVE
+---------------------------------------------------------------------------
+
+The MIT licence above applies to the source code only.
+
+The drawings of the mouse -- every file under `art-source/` and `src/art/`,
+and anything derived from them, including the application icon -- are
+copyright (c) 2026 jia and are NOT licensed for reuse. All rights reserved.
+
+You may fork this repository and run the application. You may not use,
+redistribute, or make derivative works of the drawings in your own projects,
+commercial or otherwise, without permission.
+
+If you want to build something on this code, replace the contents of
+`art-source/` with your own frames -- see src/art/README.md for the format.

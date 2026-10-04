@@ -37,8 +37,16 @@ const DEV = process.argv.includes('--dev')
 const PROBE = process.argv.includes('--probe')
 
 const CURSOR_HZ = 60
-const APP_POLL_MS = 1200
-const WINDOW_POLL_MS = 900
+// Both of these spawn a process every time. At the old rates -- 1.2s and 0.9s
+// -- that was 117 spawns a minute, forever, which is enough to show up in
+// "Apps Using Significant Energy". Neither piece of information changes fast:
+// the frontmost app rarely, and window positions only when you move a window.
+// Hiding still gets fresh geometry because the page asks for a refresh the
+// moment she's frightened.
+const APP_POLL_MS = 2500
+const WINDOW_POLL_MS = 3000
+/** Floor between on-demand window refreshes, so fright can't spam the helper. */
+const WINDOW_REFRESH_MIN_MS = 600
 // She can only convincingly hide against a window that's actually in front.
 const HIDEABLE_WINDOWS = 5
 const TOGGLE_ACCELERATOR = 'Control+Alt+M'
@@ -73,11 +81,24 @@ const settings = loadSettings()
 /* ------------------------------------------------------------------ */
 /* window                                                              */
 
+/**
+ * One overlay across every screen, so she can walk onto a second monitor
+ * instead of being penned into the main one.
+ *
+ * Work areas rather than full bounds: macOS won't let a window sit under the
+ * menu bar, and using bounds just pushes the frame down and clips the bottom.
+ */
+function overlayBounds() {
+  const areas = screen.getAllDisplays().map((d) => d.workArea)
+  const left = Math.min(...areas.map((a) => a.x))
+  const top = Math.min(...areas.map((a) => a.y))
+  const right = Math.max(...areas.map((a) => a.x + a.width))
+  const bottom = Math.max(...areas.map((a) => a.y + a.height))
+  return { x: left, y: top, width: right - left, height: bottom - top }
+}
+
 function createWindow() {
-  const display = screen.getPrimaryDisplay()
-  // workArea, not bounds: macOS will not let a window sit under the menu bar,
-  // and using bounds just pushes the frame down and clips the bottom strip.
-  const { x, y, width, height } = display.workArea
+  const { x, y, width, height } = overlayBounds()
 
   win = new BrowserWindow({
     x, y, width, height,
@@ -200,12 +221,62 @@ function startPerception() {
   )
 }
 
+function helperPath() {
+  // Packaged, the helper sits in Resources and not inside the asar -- an
+  // executable can't be run from in there, and this path wouldn't exist anyway.
+  return app.isPackaged
+    ? path.join(process.resourcesPath, 'window-list')
+    : path.join(__dirname, '..', 'tools', 'bin', 'window-list')
+}
+
+let lastWindowRead = 0
+
+/** Run the helper and push everyone else's windows, in overlay coordinates. */
+function readWindows() {
+  if (!win || win.isDestroyed() || !settings.enabled) return
+  lastWindowRead = Date.now()
+  execFile(helperPath(), [String(process.pid)], { timeout: 2000 }, (err, stdout) => {
+    if (err || !win || win.isDestroyed()) return
+    let list
+    try {
+      list = JSON.parse(stdout)
+    } catch {
+      return
+    }
+    const b = win.getBounds()
+    const local = []
+    for (const w of list) {
+      // Global screen coordinates -> coordinates inside the overlay.
+      const left = w.x - b.x
+      const top = w.y - b.y
+      // >= : a window starting exactly at our right edge is on the next display
+      if (left + w.w <= 0 || left >= b.width || top + w.h <= 0 || top >= b.height) continue
+      local.push({ id: w.id, owner: w.owner, left, top, width: w.w, height: w.h })
+      if (local.length >= HIDEABLE_WINDOWS) break
+    }
+    send('windows', local)
+  })
+}
+
+/** She's frightened and about to look for cover -- make sure it's current. */
+ipcMain.on('windows:refresh', () => {
+  if (Date.now() - lastWindowRead < WINDOW_REFRESH_MIN_MS) return
+  readWindows()
+})
+
 function stopPerception() {
   timers.forEach(clearInterval)
   timers = []
 }
 
-powerMonitor.on('lock-screen', () => send('idle', 999))
+// Nothing to watch behind a locked screen, and nobody to watch it.
+powerMonitor.on('lock-screen', () => {
+  send('idle', 999)
+  stopPerception()
+})
+powerMonitor.on('unlock-screen', () => {
+  if (settings.enabled) startPerception()
+})
 
 /** The renderer opens a hole in the click-through when the pointer is over her. */
 ipcMain.on('clickable', (_e, clickable) => {
@@ -276,7 +347,11 @@ function attachProbe() {
     if (!win || win.isDestroyed()) return
     try {
       const status = await win.webContents.executeJavaScript('window.mouseos.status')
-      console.log(`[probe] enabled=${settings.enabled} visible=${win.isVisible()}\n${status}`)
+      const b = win.getBounds()
+      console.log(
+        `[probe] enabled=${settings.enabled} visible=${win.isVisible()} ` +
+          `overlay=${b.width}x${b.height}@${b.x},${b.y} displays=${screen.getAllDisplays().length}\n${status}`,
+      )
     } catch (err) {
       console.log('[probe] renderer not ready:', err.message)
     }
@@ -292,10 +367,15 @@ app.whenReady().then(() => {
   setEnabled(settings.enabled)
 
   // Follow display changes rather than stranding her off screen.
-  screen.on('display-metrics-changed', () => {
+  // Follow monitors being added, removed or rearranged.
+  const refit = () => {
     if (!win || win.isDestroyed()) return
-    win.setBounds(screen.getPrimaryDisplay().workArea)
-  })
+    win.setBounds(overlayBounds())
+    readWindows()
+  }
+  screen.on('display-metrics-changed', refit)
+  screen.on('display-added', refit)
+  screen.on('display-removed', refit)
 
   globalShortcut.register(TOGGLE_ACCELERATOR, () => setEnabled(!settings.enabled))
 })

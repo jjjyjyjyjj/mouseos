@@ -1,7 +1,7 @@
 import './style.css'
 import { bus } from './bus'
 import { buildDesktop } from './os/desktop'
-import { bootNative, nativeBridge, syncClickable } from './os/native'
+import { bootNative, nativeBridge, refreshWindowsOnFright, syncClickable } from './os/native'
 import { setNativeWindows, windowRects } from './os/windows'
 import { Mouse } from './mouse'
 
@@ -81,7 +81,10 @@ function frame(now: number) {
   const dt = Math.min(0.05, (now - prev) / 1000)
   prev = now
   mouse.update(dt)
-  if (native) syncClickable(native, mouse.world)
+  if (native) {
+    syncClickable(native, mouse.world)
+    refreshWindowsOnFright(native, mouse.world)
+  }
   if (hud.classList.contains('is-on')) hud.textContent = mouse.status
   requestAnimationFrame(frame)
 }

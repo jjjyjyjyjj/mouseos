@@ -15,4 +15,6 @@ contextBridge.exposeInMainWorld('mouseNative', {
   /** Everyone else's windows, in overlay coordinates, front-to-back. */
   onWindows: (cb) => ipcRenderer.on('windows', (_e, list) => cb(list)),
   setClickable: (yes) => ipcRenderer.send('clickable', !!yes),
+  /** Ask for a fresh window read -- called when she's about to look for cover. */
+  refreshWindows: () => ipcRenderer.send('windows:refresh'),
 })

@@ -60,6 +60,37 @@ of it. If the front one offers nowhere to stand, she falls through to the next.
 `npm run overlay` compiles the Swift helper on demand. Without a toolchain she
 simply never finds a hiding place.
 
+## What she can see
+
+She reads four things from the system, continuously, and **sends none of them
+anywhere**. There is no network code in this app at all — no telemetry, no
+analytics, no update check.
+
+| what | why |
+| --- | --- |
+| cursor position | so she can be frightened of it, curious about it, and dodge it |
+| how long since it moved | she settles after 15s, sleeps after 30s |
+| which app is frontmost | costumes — she dances for Spotify, wears glasses for VS Code |
+| other windows' positions and sizes | so she can hide against a window edge |
+
+macOS will ask once for permission to **control System Events**. That is the
+app-name check and nothing else — it's the only thing here that needs a
+permission, and declining costs you only the costumes. Window positions come
+from `CGWindowListCopyWindowInfo`, which needs no permission because we never
+ask for window *titles*, only geometry.
+
+Nothing is stored except a two-line settings file in
+`~/Library/Application Support/mouseos/`, recording whether she's switched on
+and whether she starts at login.
+
+## Known limits
+
+- **macOS only.** The overlay, the window helper and the app detection are all
+  platform-specific.
+- She lives on whichever screens are attached when she starts, and follows
+  monitors being plugged in or unplugged — but a window spanning two displays
+  is an awkward thing on macOS and this is the least-tested part.
+
 ## The one rule
 
 **The desktop never talks to the mouse.** It emits semantic events
