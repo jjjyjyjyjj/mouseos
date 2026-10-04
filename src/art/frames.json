@@ -28,7 +28,9 @@
       "loop": false
     },
     "curl": {
-      "fps": 2
+      "fps": 2,
+      "fixed": true,
+      "flip": true
     },
     "angry": {
       "fps": 4
@@ -47,6 +49,10 @@
       "loop": false
     },
     "hideSideLeft": {
+      "fixed": true,
+      "flip": true
+    },
+    "yawn": {
       "fixed": true,
       "flip": true
     }
