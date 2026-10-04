@@ -284,6 +284,9 @@ const Annoyed: Behavior = {
 }
 
 /** 30 seconds of nothing and out comes the pillow. */
+/** Move the pointer and she's up within about this long. */
+const WAKE_ON_MOVE_MS = 900
+
 const Nap: Behavior = {
   id: 'nap',
   priority: 20,
@@ -298,10 +301,12 @@ const Nap: Behavior = {
     yield anim('yawn', 900)
     const corner = v(w.bounds.w - rand(120, 220), w.bounds.h - rand(140, 200))
     yield walkTo(corner, { speed: 110, tol: 20 })
-    yield anim('curl', 800)
-    yield say('z', 2600)
-    yield say('z z', 2600)
-    yield say('z z z', 3200)
+    yield anim('curl', 900)
+    // Out cold for as long as the pointer stays put. Re-issuing the same
+    // animation doesn't restart its frames, so she stays curled rather than
+    // twitching back to the first one every time round.
+    while (w.cursorStillMs > WAKE_ON_MOVE_MS) yield anim('curl', 400)
+    yield anim('yawn', 800)
   },
   exit(w) {
     w.drives.sleep = 0
