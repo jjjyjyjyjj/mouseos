@@ -7,7 +7,15 @@ import type { World } from './world'
  * scheduler stays free to abort it mid-yield when something more urgent bids.
  */
 export type Step =
-  | { kind: 'walkTo'; to: Vec | ((w: World) => Vec); speed?: number; tol?: number; anim?: string; t?: number }
+  | {
+      kind: 'walkTo'
+      to: Vec | ((w: World) => Vec)
+      /** A function is re-evaluated each frame, so she can hurry when behind. */
+      speed?: number | ((w: World) => number)
+      tol?: number
+      anim?: string
+      t?: number
+    }
   | { kind: 'fleeFrom'; from: (w: World) => Vec; ms: number; speed?: number; t?: number }
   | { kind: 'anim'; name: string; ms?: number; t?: number }
   | { kind: 'wait'; ms: number; t?: number }
@@ -23,8 +31,10 @@ export type Step =
 
 export type Routine = Generator<Step, void, void>
 
-export const walkTo = (to: Vec | ((w: World) => Vec), opt: { speed?: number; tol?: number; anim?: string } = {}): Step =>
-  ({ kind: 'walkTo', to, ...opt })
+export const walkTo = (
+  to: Vec | ((w: World) => Vec),
+  opt: { speed?: number | ((w: World) => number); tol?: number; anim?: string } = {},
+): Step => ({ kind: 'walkTo', to, ...opt })
 export const fleeFrom = (from: (w: World) => Vec, ms: number, speed?: number): Step =>
   ({ kind: 'fleeFrom', from, ms, speed })
 export const anim = (name: string, ms?: number): Step => ({ kind: 'anim', name, ms })
@@ -67,7 +77,8 @@ export function updateStep(step: Step, w: World, dt: number): boolean {
   switch (step.kind) {
     case 'walkTo': {
       const target = typeof step.to === 'function' ? step.to(w) : step.to
-      const speed = step.speed ?? WALK_SPEED
+      const speed =
+        typeof step.speed === 'function' ? step.speed(w) : (step.speed ?? WALK_SPEED)
       steer(c.vel, arrive(c.pos, target, speed), ACCEL, dt)
       if (dist(c.pos, target) < (step.tol ?? 14)) {
         c.vel.x = 0

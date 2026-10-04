@@ -341,6 +341,57 @@ const Dropped: Behavior = {
 }
 
 /**
+ * Trailing after the pointer, at an amble.
+ *
+ * Gated on a cursor that's moving *gently*: a lunge frightens her instead, and
+ * a cursor sitting still is Curious's job. She keeps a gap rather than walking
+ * under the pointer, and habituation makes her bolder -- a cursor that has
+ * chased her and never hurt her is one worth following.
+ */
+/** An amble when she's at her gap, a trot when she's dropped behind. */
+const FOLLOW_SLOWEST = 88
+const FOLLOW_FASTEST = 205
+/** How far behind the pointer she settles. */
+const FOLLOW_GAP = 92
+/** Too far and she can't be bothered; too fast and it's a lunge, not a stroll. */
+const FOLLOW_REACH = 620
+const FOLLOW_CURSOR_MIN = 25
+const FOLLOW_CURSOR_MAX = 520
+
+const Follow: Behavior = {
+  id: 'follow',
+  priority: 25,
+  score: (w) => {
+    if (w.held || w.drives.fear > 0.25) return 0
+    if (w.cursorSpeed < FOLLOW_CURSOR_MIN || w.cursorSpeed > FOLLOW_CURSOR_MAX) return 0
+    const d = w.cursorDist
+    if (d < FOLLOW_GAP || d > FOLLOW_REACH) return 0
+    return 0.3 + w.drives.habituation * 0.35
+  },
+  *run(): Routine {
+    yield anim('sniff', 260)
+    // Re-evaluated every frame, so she tracks the pointer as it moves.
+    yield walkTo(
+      (w) => {
+        const dx = w.critter.pos.x - w.cursor.x
+        const dy = w.critter.pos.y - w.cursor.y
+        const d = Math.hypot(dx, dy) || 1
+        return v(w.cursor.x + (dx / d) * FOLLOW_GAP, w.cursor.y + (dy / d) * FOLLOW_GAP)
+      },
+      {
+        // Falling behind makes her hurry; at her gap she's barely moving.
+        speed: (w) =>
+          clamp(FOLLOW_SLOWEST + (w.cursorDist - FOLLOW_GAP) * 0.38, FOLLOW_SLOWEST, FOLLOW_FASTEST),
+        tol: 14,
+        anim: 'walk',
+      },
+    )
+    // A short beat, not a sit-down, or the pointer gets away from her.
+    yield anim('idle', rand(180, 520))
+  },
+}
+
+/**
  * Costume table. Adding a reaction to a new app is one line here -- the OS
  * (or, in overlay mode, macOS itself) just reports which app is frontmost.
  */
@@ -382,6 +433,7 @@ export const behaviors: Behavior[] = [
   Dropped,
   HideAtWindow,
   HideUnderSheet,
+  Follow,
   Loaf,
   Wander,
   Flee,
