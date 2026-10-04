@@ -139,7 +139,7 @@ function startPerception() {
   )
 
   // Real system idle, in seconds.
-  timers.push(setInterval(() => send('idle', powerMonitor.getSystemIdleTime()), 1000))
+  timers.push(setInterval(() => send('idle', powerMonitor.getSystemIdleTime()), 100))
 
   // Where everyone else's windows are, so she has something to hide against.
   // The overlay is always-on-top and can never truly sit behind another app's

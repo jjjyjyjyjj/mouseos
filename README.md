@@ -36,7 +36,7 @@ is pulled from the OS:
 | sense | source |
 | --- | --- |
 | cursor | `screen.getCursorScreenPoint()`, 60Hz |
-| idleness | `powerMonitor.getSystemIdleTime()` — *real* system idle, so the nap means you actually left |
+| idleness | `powerMonitor.getSystemIdleTime()` — *real* system idle, so the nap means you left |
 | frontmost app | `osascript` — needs Accessibility; without it she just never gets costumes |
 | other apps' windows | `CGWindowListCopyWindowInfo` via [tools/window-list.swift](tools/window-list.swift) — **no permission prompt**; only window *titles* need Screen Recording, and we never ask |
 
