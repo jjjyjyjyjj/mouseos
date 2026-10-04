@@ -341,6 +341,34 @@ const Dropped: Behavior = {
 }
 
 /**
+ * A pointer parked this long means nobody's doing anything with her, so she
+ * stops casting about and just stands there.
+ *
+ * This is the cursor standing still, not the machine being idle -- she settles
+ * while you read or type, and only curls up to sleep once the whole machine has
+ * gone quiet, which Nap handles at a longer timeout.
+ */
+const SETTLE_AFTER_MS = 15_000
+
+const Settle: Behavior = {
+  id: 'settle',
+  priority: 45,
+  score: (w) => {
+    if (w.held || w.cursorStillMs < SETTLE_AFTER_MS) return 0
+    if (w.drives.fear > 0.25) return 0
+    // Give way to the nap once she's genuinely sleepy, and to a costume --
+    // dancing to whatever's playing beats standing about.
+    if (w.drives.sleep >= 0.5) return 0
+    if (w.focusedApp && APP_MOODS[w.focusedApp]) return 0
+    return 0.9
+  },
+  *run(): Routine {
+    yield anim('idle', rand(2200, 5200))
+    yield anim('sniff', rand(350, 800))
+  },
+}
+
+/**
  * Trailing after the pointer, at an amble.
  *
  * Gated on a cursor that's moving *gently*: a lunge frightens her instead, and
@@ -433,6 +461,7 @@ export const behaviors: Behavior[] = [
   Dropped,
   HideAtWindow,
   HideUnderSheet,
+  Settle,
   Follow,
   Loaf,
   Wander,
