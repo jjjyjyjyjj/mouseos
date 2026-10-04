@@ -12,8 +12,8 @@
 # On each release, bump `version` and replace `sha256` with the output of:
 #   shasum -a 256 release/MouseOS-<version>-universal.dmg
 cask "mouseos" do
-  version "0.0.1"
-  sha256 "REPLACE_WITH_SHASUM_OF_THE_DMG"
+  version "0.1.0"
+  sha256 "c809501bd4486fe0e22b3ddca420c83b32a92aa2453df2ecd5c941fccd1ddaea"
 
   url "https://github.com/jjjyjyjyjj/mouseos/releases/download/v#{version}/MouseOS-#{version}-universal.dmg"
   name "MouseOS"
