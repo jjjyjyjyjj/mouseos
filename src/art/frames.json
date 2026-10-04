@@ -39,7 +39,8 @@
       "offset": [
         0,
         36
-      ]
+      ],
+      "fps": 5
     },
     "hide": {
       "fixed": true
