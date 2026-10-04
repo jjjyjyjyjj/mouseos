@@ -13,7 +13,7 @@ import { SLEEP_AFTER_MS, type World } from './world'
 const Loaf: Behavior = {
   id: 'loaf',
   priority: 10,
-  score: () => 0.08,
+  score: () => 0.1,
   *run(): Routine {
     yield anim('sniff', rand(300, 700))
   },
@@ -31,7 +31,7 @@ const Wander: Behavior = {
     const legs = Math.round(rand(2, 5))
     for (let i = 0; i < legs; i++) {
       yield walkTo(v(rand(80, w.bounds.w - 80), rand(120, w.bounds.h - 140)), {
-        speed: rand(130, 205),
+        speed: rand(85, 135),
       })
       if (Math.random() < 0.25) yield anim('sniff', rand(250, 550))
     }
