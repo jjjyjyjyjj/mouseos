@@ -2,7 +2,7 @@ import { windowRects, type WinRect } from '../os/windows'
 import { clamp, dist, rand, v, type Vec } from './motion'
 import { anim, coast, fleeFrom, held, say, snap, walkTo, type Routine } from './steps'
 import type { Behavior } from './brain'
-import type { World } from './world'
+import { SLEEP_AFTER_MS, type World } from './world'
 
 /**
  * Each behavior bids with score() and plays out as a generator.
@@ -287,7 +287,13 @@ const Annoyed: Behavior = {
 const Nap: Behavior = {
   id: 'nap',
   priority: 20,
-  score: (w) => (w.drives.sleep > 0.55 ? 0.8 + w.drives.sleep * 0.3 : 0),
+  // The pointer must still be parked, not merely have been. Sleepiness takes
+  // a moment to drain, and without this a nudge of the mouse was followed
+  // immediately by her dozing off.
+  score: (w) =>
+    w.drives.sleep > 0.55 && w.cursorStillMs > SLEEP_AFTER_MS
+      ? 0.8 + w.drives.sleep * 0.3
+      : 0,
   *run(w): Routine {
     yield anim('yawn', 900)
     const corner = v(w.bounds.w - rand(120, 220), w.bounds.h - rand(140, 200))

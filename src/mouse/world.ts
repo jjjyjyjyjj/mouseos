@@ -29,6 +29,9 @@ function measureBounds(): { w: number; h: number } {
   return { w: Math.max(480, window.innerWidth), h: Math.max(360, window.innerHeight) }
 }
 
+/** How long the pointer must sit still before she starts getting sleepy. */
+export const SLEEP_AFTER_MS = 30_000
+
 export class World {
   cursor: Vec = v(-999, -999)
   cursorVel: Vec = v(0, 0)
@@ -155,8 +158,11 @@ export class World {
       this.drives.curiosity = Math.max(0, this.drives.curiosity - dt * 0.5)
     }
 
+    // Sleepiness follows the parked pointer, not the machine being idle. She
+    // settles at SETTLE, dozes off at SLEEP, and wakes the moment it moves --
+    // so she sleeps through you reading, and a nudge of the mouse rouses her.
     this.drives.sleep =
-      this.idleMs > 30_000
+      this.cursorStillMs > SLEEP_AFTER_MS
         ? clamp(this.drives.sleep + dt * 0.4, 0, 1)
         : Math.max(0, this.drives.sleep - dt * 1.5)
   }
