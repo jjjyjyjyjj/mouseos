@@ -9,24 +9,32 @@ import { SLEEP_AFTER_MS, type World } from './world'
  * Adding a new reaction = adding one object to the array at the bottom.
  */
 
+/** A beat between other things, not a way to spend the afternoon. */
 const Loaf: Behavior = {
   id: 'loaf',
   priority: 10,
-  score: () => 0.2,
+  score: () => 0.08,
   *run(): Routine {
-    yield anim('idle', rand(1200, 3000))
-    yield anim('sniff', rand(500, 900))
+    yield anim('sniff', rand(300, 700))
   },
 }
 
 const Wander: Behavior = {
   id: 'wander',
   priority: 10,
-  score: (w) => (w.drives.fear < 0.2 ? 0.26 : 0),
+  // Up to the point she'd bolt, so there's no band of fear where standing
+  // about is the only thing bidding.
+  score: (w) => (w.drives.fear < 0.32 ? 0.26 : 0),
   *run(w): Routine {
-    yield anim('sniff', 400)
-    yield walkTo(v(rand(80, w.bounds.w - 80), rand(120, w.bounds.h - 140)))
-    yield anim('idle', rand(400, 1400))
+    // Several legs back to back. One leg wrapped in idles meant she spent more
+    // time standing than walking.
+    const legs = Math.round(rand(2, 5))
+    for (let i = 0; i < legs; i++) {
+      yield walkTo(v(rand(80, w.bounds.w - 80), rand(120, w.bounds.h - 140)), {
+        speed: rand(130, 205),
+      })
+      if (Math.random() < 0.25) yield anim('sniff', rand(250, 550))
+    }
   },
 }
 
@@ -258,10 +266,9 @@ const Curious: Behavior = {
       },
       { speed: 150, tol: 22 },
     )
-    yield anim('sniff', 1100)
-    yield say('?', 800)
+    yield anim('sniff', 600)
+    yield say('?', 500)
     w.drives.curiosity = 0
-    yield anim('idle', 600)
   },
 }
 
@@ -408,14 +415,14 @@ const Follow: Behavior = {
     return 0.3 + w.drives.habituation * 0.35
   },
   *run(): Routine {
-    yield anim('sniff', 260)
+    // Aim off to one side rather than straight at her own gap, so she keeps
+    // circling the pointer instead of converging on one spot and freezing.
+    const swing = rand(-0.8, 0.8)
     // Re-evaluated every frame, so she tracks the pointer as it moves.
     yield walkTo(
       (w) => {
-        const dx = w.critter.pos.x - w.cursor.x
-        const dy = w.critter.pos.y - w.cursor.y
-        const d = Math.hypot(dx, dy) || 1
-        return v(w.cursor.x + (dx / d) * FOLLOW_GAP, w.cursor.y + (dy / d) * FOLLOW_GAP)
+        const a = Math.atan2(w.critter.pos.y - w.cursor.y, w.critter.pos.x - w.cursor.x) + swing
+        return v(w.cursor.x + Math.cos(a) * FOLLOW_GAP, w.cursor.y + Math.sin(a) * FOLLOW_GAP)
       },
       {
         // Falling behind makes her hurry; at her gap she's barely moving.
@@ -425,8 +432,8 @@ const Follow: Behavior = {
         anim: 'walk',
       },
     )
-    // A short beat, not a sit-down, or the pointer gets away from her.
-    yield anim('idle', rand(180, 520))
+    // A breath, not a sit-down.
+    yield anim('sniff', rand(150, 380))
   },
 }
 
