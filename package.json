@@ -11,7 +11,7 @@
     "helper:build": "node tools/build-helper.mjs",
     "build": "npm run art:prep && tsc --noEmit && vite build",
     "preview": "vite preview",
-    "dist": "npm run art:prep && npm run helper:build && vite build && electron-builder --mac"
+    "dist": "npm run art:prep && npm run helper:build && vite build && electron-builder --mac --publish never"
   },
   "devDependencies": {
     "electron": "^44.3.0",
@@ -60,5 +60,6 @@
   "repository": {
     "type": "git",
     "url": "https://github.com/jjjyjyjyjj/mouseos.git"
-  }
+  },
+  "description": "A hand-drawn mouse that lives on your desktop."
 }
