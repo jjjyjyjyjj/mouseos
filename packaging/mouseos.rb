@@ -13,7 +13,7 @@
 #   shasum -a 256 release/MouseOS-<version>-universal.dmg
 cask "mouseos" do
   version "0.1.0"
-  sha256 "c809501bd4486fe0e22b3ddca420c83b32a92aa2453df2ecd5c941fccd1ddaea"
+  sha256 "7623696dec969479806c75057f4bdf7e2b39dfbf82685647422913a231a63ce3"
 
   url "https://github.com/jjjyjyjyjj/mouseos/releases/download/v#{version}/MouseOS-#{version}-universal.dmg"
   name "MouseOS"
